@@ -1,0 +1,13 @@
+{
+    "name": "Student",
+    "alias": "student",
+    "description": "Modul Kesiswaan — CRUD siswa, kelas, tahun ajaran, import Excel",
+    "keywords": [],
+    "priority": 1,
+    "providers": [
+        "Modules\\Student\\Providers\\StudentServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

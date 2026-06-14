@@ -1,0 +1,10 @@
+{
+    "name": "nwidart/student",
+    "description": "Student Module for SIMT MTs",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Student\\": "app/",
+            "Modules\\Student\\Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}

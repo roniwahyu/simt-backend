@@ -1,0 +1,10 @@
+{
+    "name": "nwidart/attendance",
+    "description": "Attendance Module for SIMT MTs",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Attendance\\": "app/",
+            "Modules\\Attendance\\Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}
