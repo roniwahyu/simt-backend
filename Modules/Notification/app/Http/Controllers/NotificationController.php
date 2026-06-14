@@ -292,4 +292,101 @@ class NotificationController extends Controller
         $recentNotifications = WaNotification::latest()->take(10)->get();
         return view('notification::partials.table-rows', compact('recentNotifications'));
     }
+
+    /**
+     * Tampilkan halaman WA Tools untuk mengirim pesan manual dan melihat balasan masuk
+     */
+    public function tools(Request $request): View
+    {
+        $tenantId = app(Tenancy::class)->tenantId();
+
+        // Ambil data tenant untuk di-select (jika superadmin tampilkan semua, jika tidak hanya tenant yang bersangkutan)
+        if (auth()->user()->hasRole('superadmin')) {
+            $tenants = \App\Models\Tenant::all();
+        } else {
+            $tenants = \App\Models\Tenant::where('id', $tenantId)->get();
+        }
+
+        // Ambil pesan masuk terbaru
+        $incomingMessages = WaNotification::withoutGlobalScopes()
+            ->with('tenant')
+            ->where(function($query) use ($tenantId) {
+                if ($tenantId) {
+                    $query->where('tenant_id', $tenantId);
+                }
+            })
+            ->where('type', 'incoming')
+            ->latest()
+            ->take(15)
+            ->get();
+
+        return view('notification::tools', compact('tenants', 'incomingMessages', 'tenantId'));
+    }
+
+    /**
+     * Kirim pesan WA manual dari tools page
+     */
+    public function toolsSend(Request $request): JsonResponse
+    {
+        $request->validate([
+            'tenant_id' => 'required|exists:tenants,id',
+            'to_phone' => 'required|string',
+            'message' => 'required|string',
+        ]);
+
+        $tenantId = $request->input('tenant_id');
+        $toPhone = $request->input('to_phone');
+        $message = $request->input('message');
+
+        // Check if phone number is valid
+        $formattedPhone = preg_replace('/[^0-9]/', '', $toPhone);
+        if (empty($formattedPhone)) {
+            return response()->json(['success' => false, 'message' => 'Nomor HP tidak valid'], 400);
+        }
+
+        try {
+            $job = new \App\Jobs\SendWaNotification(
+                (int) $tenantId,
+                $formattedPhone,
+                'custom',
+                ['message' => $message]
+            );
+
+            // Execute the job synchronously
+            $job->handle();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesan berhasil dikirim via WhatsApp!',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Tools WA send error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim pesan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mengembalikan partial HTML dari feed pesan masuk untuk pembaruan real-time
+     */
+    public function incomingFeed(Request $request): View
+    {
+        $tenantId = app(Tenancy::class)->tenantId();
+
+        $incomingMessages = WaNotification::withoutGlobalScopes()
+            ->with('tenant')
+            ->where(function($query) use ($tenantId) {
+                if ($tenantId) {
+                    $query->where('tenant_id', $tenantId);
+                }
+            })
+            ->where('type', 'incoming')
+            ->latest()
+            ->take(15)
+            ->get();
+
+        return view('notification::partials.incoming-feed', compact('incomingMessages'));
+    }
 }

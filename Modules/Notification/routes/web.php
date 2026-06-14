@@ -10,4 +10,7 @@ Route::middleware(['auth', SetTenantFromUser::class])->group(function () {
     Route::post('/admin/notification/session/stop', [NotificationController::class, 'stopSession'])->name('notification.session.stop');
     Route::get('/admin/notification/session/status', [NotificationController::class, 'sessionStatus'])->name('notification.session.status');
     Route::get('/admin/notification/table', [NotificationController::class, 'notificationsTable'])->name('notification.table');
+    Route::get('/admin/notification/tools', [NotificationController::class, 'tools'])->name('notification.tools');
+    Route::post('/admin/notification/tools/send', [NotificationController::class, 'toolsSend'])->name('notification.tools.send');
+    Route::get('/admin/notification/incoming-feed', [NotificationController::class, 'incomingFeed'])->name('notification.incoming_feed');
 });
