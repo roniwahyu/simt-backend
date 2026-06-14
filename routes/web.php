@@ -25,7 +25,9 @@ Route::prefix('admin')->middleware(['auth', 'role:superadmin'])->group(function 
 | Tenant Web Routes (subdomain or / with tenant header)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', IdentifyTenant::class, SetTenantFromUser::class])->group(function () {
+// Web (Blade) memakai SetTenantFromUser (berbasis sesi login), BUKAN IdentifyTenant
+// (yang berbasis header/subdomain untuk API). Sumber kebenaran tenant web = users.tenant_id.
+Route::middleware(['auth', SetTenantFromUser::class])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
