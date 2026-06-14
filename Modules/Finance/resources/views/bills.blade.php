@@ -31,6 +31,10 @@
             <input type="month" name="period" value="{{ request('period') }}" class="border rounded px-3 py-2 text-sm">
         </div>
         <button type="submit" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 text-sm">Filter</button>
+        <a href="{{ route('finance.bills.export', request()->only(['period', 'status', 'student_id'])) }}" class="px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Export Excel
+        </a>
     </form>
 
     <div class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
@@ -63,12 +67,6 @@
                         <td class="px-4 py-2 text-right space-x-2">
                             @if($b->status !== 'paid')
                             <button onclick="openPayment({{ $b->id }}, {{ $b->remaining() }})" class="text-blue-600 hover:underline text-xs">Bayar</button>
-                            {{-- [2026-06-14 | AG] Tambah tombol Kirim Notif per siswa --}}
-                            <form action="{{ route('finance.reminders') }}" method="POST" class="inline">
-                                @csrf
-                                <input type="hidden" name="bill_ids[]" value="{{ $b->id }}">
-                                <button type="submit" class="text-amber-600 hover:underline text-xs" title="Kirim Pengingat WhatsApp ke Orang Tua">Kirim Notif</button>
-                            </form>
                             @endif
                         </td>
                     </tr>
@@ -97,11 +95,6 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Nominal (Rp)</label>
                 <input type="number" name="amount" required class="w-full border rounded px-3 py-2">
-            </div>
-            {{-- [2026-06-14 | AG] Tambah checkbox auto-notifikasi WhatsApp ke wali murid --}}
-            <div class="flex items-center gap-2 py-1">
-                <input type="checkbox" name="auto_notify" id="auto_notify" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <label for="auto_notify" class="text-xs font-medium text-gray-600 select-none cursor-pointer">Kirim Notifikasi Otomatis ke WhatsApp Orangtua</label>
             </div>
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="document.getElementById('generate-modal').classList.add('hidden')" class="px-3 py-2 rounded border text-sm">Batal</button>

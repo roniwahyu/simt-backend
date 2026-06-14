@@ -50,10 +50,20 @@ class FinanceController extends Controller
             return back()->with('error', 'Tidak ada tahun ajaran aktif.');
         }
 
-        $students = Student::where('status', 'active')->get();
+        // [2026-06-14 | AG] Ambil status auto_notify dari input form
+        $autoNotify = $request->boolean('auto_notify');
+        
+        // [2026-06-14 | AG] Eager load guardians jika auto_notify aktif untuk menghindari N+1 query
+        $studentsQuery = Student::where('status', 'active');
+        if ($autoNotify) {
+            $studentsQuery->with('guardians');
+        }
+        $students = $studentsQuery->get();
+
         $count = 0;
+        $notifCount = 0;
         foreach ($students as $student) {
-            Bill::create([
+            $bill = Bill::create([
                 'tenant_id' => $tenant->id,
                 'student_id' => $student->id,
                 'period' => $request->input('period'),
@@ -62,9 +72,34 @@ class FinanceController extends Controller
                 'due_date' => $request->input('due_date'),
             ]);
             $count++;
+
+            // [2026-06-14 | AG] Kirim notifikasi WA ke wali murid otomatis jika diset
+            if ($autoNotify) {
+                foreach ($student->guardians as $guardian) {
+                    if (!empty($guardian->phone)) {
+                        SendWaNotification::dispatch(
+                            $tenant->id,
+                            $guardian->phone,
+                            'bill_reminder',
+                            [
+                                'student_name' => $student->name,
+                                'component' => $bill->component,
+                                'period' => $bill->period,
+                                'amount' => $bill->remaining(),
+                            ]
+                        )->onQueue('wa');
+                        $notifCount++;
+                    }
+                }
+            }
         }
 
-        return redirect()->route('finance.bills')->with('success', "Tagihan {$count} siswa berhasil dibuat.");
+        $msg = "Tagihan {$count} siswa berhasil dibuat.";
+        if ($autoNotify) {
+            $msg .= " Dan {$notifCount} notifikasi WA diantrikan.";
+        }
+
+        return redirect()->route('finance.bills')->with('success', $msg);
     }
 
     public function recordPayment(Request $request, Bill $bill): RedirectResponse

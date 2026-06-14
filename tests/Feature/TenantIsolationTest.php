@@ -64,12 +64,12 @@ class TenantIsolationTest extends TestCase
         ]);
 
         // Create school year for both
-        SchoolYear::create([
+        $sy1 = SchoolYear::create([
             'tenant_id' => $this->tenant1->id,
             'name' => '2026/2027',
             'is_active' => true,
         ]);
-        SchoolYear::create([
+        $sy2 = SchoolYear::create([
             'tenant_id' => $this->tenant2->id,
             'name' => '2026/2027',
             'is_active' => true,
@@ -78,13 +78,13 @@ class TenantIsolationTest extends TestCase
         // Create classes for both
         SchoolClass::create([
             'tenant_id' => $this->tenant1->id,
-            'school_year_id' => 1,
+            'school_year_id' => $sy1->id,
             'name' => '7A',
             'grade' => '7',
         ]);
         SchoolClass::create([
             'tenant_id' => $this->tenant2->id,
-            'school_year_id' => 2,
+            'school_year_id' => $sy2->id,
             'name' => '7A',
             'grade' => '7',
         ]);
