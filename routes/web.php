@@ -33,7 +33,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Login routes
+// [2026-06-14 | AG] Pemisahan jalur WEB dan API login untuk memfungsikan session & redirect
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/login', [AuthController::class, 'webLogin']);
+Route::post('/logout', [AuthController::class, 'webLogout'])->name('logout');

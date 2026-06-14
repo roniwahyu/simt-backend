@@ -95,6 +95,66 @@ class AuthController extends Controller
         ]);
     }
 
+    // [2026-06-14 | AG] Login khusus Web menggunakan Laravel Session & Cookie
+    public function webLogin(Request $request)
+    {
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $loginField = $request->input('login');
+
+        $user = User::withoutGlobalScope('tenant')
+            ->where(function ($q) use ($loginField) {
+                $q->where('email', $loginField)->orWhere('phone', $loginField);
+            })
+            ->first();
+
+        if (! $user || ! Hash::check($request->input('password'), $user->password)) {
+            throw ValidationException::withMessages([
+                'login' => ['Kredensial tidak valid.'],
+            ]);
+        }
+
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'login' => ['Akun dinonaktifkan.'],
+            ]);
+        }
+
+        $tenant = $user->tenant;
+        if ($tenant && $tenant->isSuspended()) {
+            throw ValidationException::withMessages([
+                'login' => ['Tenant dinonaktifkan. Hubungi vendor.'],
+            ]);
+        }
+
+        // Jalankan session login
+        auth()->login($user, $request->filled('remember'));
+
+        // Update last login
+        $user->update(['last_login_at' => now()]);
+
+        // Redirect sesuai role
+        if ($user->hasRole('superadmin')) {
+            return redirect()->route('super.dashboard');
+        }
+
+        return redirect()->route('dashboard');
+    }
+
+    // [2026-06-14 | AG] Logout khusus Web dengan mengakhiri Session
+    public function webLogout(Request $request)
+    {
+        auth()->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
+    }
+
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
