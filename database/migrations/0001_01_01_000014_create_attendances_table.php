@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignId('class_id')->constrained('classes')->cascadeOnDelete();
+            $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
             $table->date('date');
             $table->enum('status', ['H', 'A', 'I', 'S', 'T'])->default('H'); // Hadir, Alpa, Izin, Sakit, Terlambat
             $table->time('arrival_time')->nullable();

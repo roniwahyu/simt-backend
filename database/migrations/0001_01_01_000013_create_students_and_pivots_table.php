@@ -20,14 +20,17 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->string('status', 20)->default('active'); // active, inactive, graduated, transferred
             $table->timestamps();
-            $table->index(['tenant_id', 'nis']);
-            $table->index(['tenant_id', 'nisn']);
+            // 🔒 Integritas data: NIS & NISN HARUS unik per-tenant.
+            // NULL diperlakukan distinct oleh SQLite & MySQL, jadi siswa tanpa
+            // NIS/NISN tetap boleh banyak; duplikat non-null DITOLAK di level DB.
+            $table->unique(['tenant_id', 'nis'], 'students_tenant_nis_unique');
+            $table->unique(['tenant_id', 'nisn'], 'students_tenant_nisn_unique');
         });
 
         Schema::create('class_student', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignId('class_id')->constrained('classes')->cascadeOnDelete();
+            $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
             $table->foreignId('school_year_id')->constrained('school_years')->cascadeOnDelete();
             $table->timestamps();
             $table->unique(['student_id', 'class_id', 'school_year_id']);
