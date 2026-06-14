@@ -16,7 +16,7 @@ class SendWaNotification implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
-    public int $backoff = [30, 120, 300]; // seconds: 30s, 2m, 5m
+    public array $backoff = [30, 120, 300]; // seconds: 30s, 2m, 5m
 
     public function __construct(
         public int $tenantId,
