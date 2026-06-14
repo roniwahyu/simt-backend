@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `attendances` (
   KEY `attendances_marked_by_foreign` (`marked_by`),
   KEY `attendances_tenant_id_date_index` (`tenant_id`,`date`),
   KEY `attendances_tenant_id_class_id_date_index` (`tenant_id`,`class_id`,`date`),
-  CONSTRAINT `attendances_class_id_foreign` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `attendances_class_id_foreign` FOREIGN KEY (`class_id`) REFERENCES `school_classes` (`id`) ON DELETE CASCADE,
   CONSTRAINT `attendances_marked_by_foreign` FOREIGN KEY (`marked_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `attendances_student_id_foreign` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   CONSTRAINT `attendances_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
@@ -302,9 +302,9 @@ CREATE TABLE IF NOT EXISTS `cache_locks` (
 -- Dumping data for table simt_backend.cache_locks: ~0 rows (approximately)
 DELETE FROM `cache_locks`;
 
--- Dumping structure for table simt_backend.classes
-DROP TABLE IF EXISTS `classes`;
-CREATE TABLE IF NOT EXISTS `classes` (
+-- Dumping structure for table simt_backend.school_classes
+DROP TABLE IF EXISTS `school_classes`;
+CREATE TABLE IF NOT EXISTS `school_classes` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` bigint(20) unsigned NOT NULL,
   `school_year_id` bigint(20) unsigned NOT NULL,
@@ -314,17 +314,17 @@ CREATE TABLE IF NOT EXISTS `classes` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `classes_tenant_id_school_year_id_name_unique` (`tenant_id`,`school_year_id`,`name`),
-  KEY `classes_school_year_id_foreign` (`school_year_id`),
-  KEY `classes_teacher_id_foreign` (`teacher_id`),
-  CONSTRAINT `classes_school_year_id_foreign` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `classes_teacher_id_foreign` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `classes_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `school_classes_tenant_id_school_year_id_name_unique` (`tenant_id`,`school_year_id`,`name`),
+  KEY `school_classes_school_year_id_foreign` (`school_year_id`),
+  KEY `school_classes_teacher_id_foreign` (`teacher_id`),
+  CONSTRAINT `school_classes_school_year_id_foreign` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `school_classes_teacher_id_foreign` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `school_classes_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table simt_backend.classes: ~5 rows (approximately)
-DELETE FROM `classes`;
-INSERT INTO `classes` (`id`, `tenant_id`, `school_year_id`, `name`, `grade`, `teacher_id`, `created_at`, `updated_at`) VALUES
+-- Dumping data for table simt_backend.school_classes: ~5 rows (approximately)
+DELETE FROM `school_classes`;
+INSERT INTO `school_classes` (`id`, `tenant_id`, `school_year_id`, `name`, `grade`, `teacher_id`, `created_at`, `updated_at`) VALUES
 	(1, 1, 1, '7A', '7', 3, '2026-06-13 21:03:56', '2026-06-13 21:03:56'),
 	(2, 1, 1, '7B', '7', 3, '2026-06-13 21:03:56', '2026-06-13 21:03:56'),
 	(3, 1, 1, '8A', '8', 3, '2026-06-13 21:03:56', '2026-06-13 21:03:56'),
@@ -344,7 +344,7 @@ CREATE TABLE IF NOT EXISTS `class_student` (
   UNIQUE KEY `class_student_student_id_class_id_school_year_id_unique` (`student_id`,`class_id`,`school_year_id`),
   KEY `class_student_class_id_foreign` (`class_id`),
   KEY `class_student_school_year_id_foreign` (`school_year_id`),
-  CONSTRAINT `class_student_class_id_foreign` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `class_student_class_id_foreign` FOREIGN KEY (`class_id`) REFERENCES `school_classes` (`id`) ON DELETE CASCADE,
   CONSTRAINT `class_student_school_year_id_foreign` FOREIGN KEY (`school_year_id`) REFERENCES `school_years` (`id`) ON DELETE CASCADE,
   CONSTRAINT `class_student_student_id_foreign` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -1156,8 +1156,8 @@ CREATE TABLE IF NOT EXISTS `students` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `students_tenant_id_nis_index` (`tenant_id`,`nis`),
-  KEY `students_tenant_id_nisn_index` (`tenant_id`,`nisn`),
+  UNIQUE KEY `students_tenant_id_nis_unique` (`tenant_id`,`nis`),
+  UNIQUE KEY `students_tenant_id_nisn_unique` (`tenant_id`,`nisn`),
   CONSTRAINT `students_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
