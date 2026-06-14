@@ -205,6 +205,30 @@ class NotificationController extends Controller
         }
 
         $tenantId = $request->input('tenantId');
+        $event = $request->input('event');
+
+        // Handle incoming message event from Node.js Gateway
+        if ($event === 'message_received') {
+            $from = $request->input('from');
+            $message = $request->input('message');
+
+            $notif = WaNotification::create([
+                'tenant_id' => $tenantId,
+                'to_phone' => $from,
+                'type' => 'incoming',
+                'payload' => ['message' => $message],
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+
+            Log::info("Webhook Callback: Incoming WA from {$from} stored: {$message}");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Incoming message from {$from} saved",
+            ]);
+        }
+
         $referenceId = $request->input('referenceId');
         $rawStatus = $request->input('status'); // sent, delivered, failed
         $error = $request->input('error');
