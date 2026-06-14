@@ -117,7 +117,12 @@
                             }
                         @endphp
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-4 py-3 font-semibold text-gray-900">{{ $notif->to_phone }}</td>
+                            <td class="px-4 py-3 font-semibold text-gray-900">
+                                {{ $notif->to_phone }}
+                                @if($isIncoming && !empty($payload['sender_name']))
+                                    <span class="block text-[10px] text-gray-400 font-normal">{{ $payload['sender_name'] }}</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-center">
                                 @if($isIncoming)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -137,7 +142,10 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 max-w-xs truncate font-medium text-gray-600" title="{{ $messageText }}">
-                                {{ $messageText }}
+                                <span>{{ $messageText }}</span>
+                                @if(!empty($payload['message_id']))
+                                    <span class="block text-[9px] text-gray-400 font-mono tracking-tighter">ID: {{ $payload['message_id'] }}</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold

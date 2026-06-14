@@ -56,7 +56,13 @@ class SendWaNotification implements ShouldQueue
             ]);
 
             if ($response->successful()) {
-                $notif->update(['status' => 'sent', 'sent_at' => now()]);
+                $gatewayMsgId = $response->json('messageId');
+                $updatedPayload = array_merge($this->payload, ['message_id' => $gatewayMsgId]);
+                $notif->update([
+                    'status' => 'sent', 
+                    'sent_at' => now(),
+                    'payload' => $updatedPayload
+                ]);
                 Log::info("WA sent to {$this->toPhone}", ['tenant' => $this->tenantId, 'type' => $this->type]);
             } else {
                 $notif->update(['status' => 'retrying', 'last_error' => $response->body()]);

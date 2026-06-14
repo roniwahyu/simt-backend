@@ -211,17 +211,23 @@ class NotificationController extends Controller
         if ($event === 'message_received') {
             $from = $request->input('from');
             $message = $request->input('message');
+            $senderName = $request->input('senderName');
+            $messageId = $request->input('messageId');
 
             $notif = WaNotification::create([
                 'tenant_id' => $tenantId,
                 'to_phone' => $from,
                 'type' => 'incoming',
-                'payload' => ['message' => $message],
+                'payload' => [
+                    'message' => $message,
+                    'sender_name' => $senderName,
+                    'message_id' => $messageId,
+                ],
                 'status' => 'sent',
                 'sent_at' => now(),
             ]);
 
-            Log::info("Webhook Callback: Incoming WA from {$from} stored: {$message}");
+            Log::info("Webhook Callback: Incoming WA from {$from} ({$senderName}) stored: {$message}");
 
             return response()->json([
                 'success' => true,
@@ -255,6 +261,14 @@ class NotificationController extends Controller
                 if ($error) {
                     $updateData['last_error'] = $error;
                 }
+
+                // Simpan WhatsApp messageId ke payload jika ada
+                $messageId = $request->input('messageId');
+                if ($messageId) {
+                    $currentPayload = $notif->payload ?? [];
+                    $updateData['payload'] = array_merge($currentPayload, ['message_id' => $messageId]);
+                }
+
                 $notif->update($updateData);
 
                 return response()->json([
