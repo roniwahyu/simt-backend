@@ -30,8 +30,8 @@
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition">Masuk</button>
         </form>
         <div class="text-xs text-center text-gray-400">
-            Demo: superadmin / simt2026 (Super Admin)<br>
-            081234567892 / simt2026 (Kepala Madrasah Demo)
+            Demo: vendor@simt.id / password (Super Admin)<br>
+            628123456010 / password (Admin Sekolah MTs Al-Hikmah)
         </div>
     </div>
 </body>
