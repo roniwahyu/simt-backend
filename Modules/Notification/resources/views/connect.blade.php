@@ -96,7 +96,7 @@
                             <th class="px-4 py-3">Waktu</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody id="notifications-table-body" class="divide-y divide-gray-100">
                         @forelse($recentNotifications as $notif)
                         @php
                             $isIncoming = $notif->type === 'incoming';
@@ -294,5 +294,18 @@ const initialStatus = '{{ $status }}';
 if (initialStatus === 'CONNECTING' || initialStatus === 'QR_READY') {
     startPolling();
 }
+
+// Poll the notifications table every 5 seconds to keep incoming/outgoing lists loaded and fresh
+setInterval(async () => {
+    try {
+        const res = await fetch('{{ route("notification.table") }}');
+        if (res.ok) {
+            const html = await res.text();
+            document.getElementById('notifications-table-body').innerHTML = html;
+        }
+    } catch (e) {
+        // Suppress list poll errors silently
+    }
+}, 5000);
 </script>
 @endpush

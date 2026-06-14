@@ -283,4 +283,13 @@ class NotificationController extends Controller
             'message' => 'Notification record not found',
         ], 404);
     }
+
+    /**
+     * Mengembalikan partial HTML dari tabel notifikasi untuk pembaruan real-time
+     */
+    public function notificationsTable(Request $request): View
+    {
+        $recentNotifications = WaNotification::latest()->take(10)->get();
+        return view('notification::partials.table-rows', compact('recentNotifications'));
+    }
 }
