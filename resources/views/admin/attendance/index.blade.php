@@ -3,8 +3,8 @@
 @section('content')
 <div class="space-y-4">
     <h1 class="text-2xl font-bold">Presensi Harian</h1>
-    <form method="GET" class="flex flex-col sm:flex-row gap-3">
-        <select name="class_id" class="border rounded px-3 py-2 bg-white" onchange="this.form.submit()">
+    <form id="attendance-filter-form" class="flex flex-col sm:flex-row gap-3" onsubmit="event.preventDefault(); navigateToGrid();">
+        <select name="class_id" id="class_id_select" class="border rounded px-3 py-2 bg-white" onchange="navigateToGrid()">
             <option value="">Pilih Kelas</option>
             @foreach($classes as $c)
             <option value="{{ $c->id }}" {{ $selectedClass == $c->id ? 'selected' : '' }}>
@@ -12,7 +12,7 @@
             </option>
             @endforeach
         </select>
-        <input type="date" name="date" value="{{ $date }}" class="border rounded px-3 py-2" onchange="this.form.submit()">
+        <input type="date" name="date" id="date_input" value="{{ $date }}" class="border rounded px-3 py-2" onchange="navigateToGrid()">
     </form>
 
     @if($students && $students->count())
@@ -58,6 +58,16 @@
 
 @push('scripts')
 <script>
+function navigateToGrid() {
+    const classId = document.getElementById('class_id_select').value;
+    const date = document.getElementById('date_input').value;
+    if (classId) {
+        window.location.href = `{{ url('/attendance/class') }}/${classId}/${date}`;
+    } else {
+        window.location.href = `{{ url('/attendance') }}`;
+    }
+}
+
 const statusOrder = ['H','A','I','S','T'];
 const statusLabels = {H:'Hadir',A:'Alpa',I:'Izin',S:'Sakit',T:'Terlambat'};
 const statusClasses = {

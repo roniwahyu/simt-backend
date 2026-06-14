@@ -39,6 +39,8 @@ class AttendanceModuleTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+
         $this->tenant = Tenant::create([
             'name' => 'MTs Presensi',
             'domain' => 'mts-presensi',
@@ -57,10 +59,14 @@ class AttendanceModuleTest extends TestCase
             'email' => 'guru@presensi.mts',
             'phone' => '628000000077',
             'password' => bcrypt('password'),
+            'role_display' => 'guru',
         ]);
 
         app(Tenancy::class)->setTenant($this->tenant);
-        $this->guru->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'mark_attendance', 'guard_name' => 'web']));
+        
+        $roleService = new \App\Services\TenantRoleService();
+        $roleService->provisionForTenant($this->tenant->id);
+        $roleService->assignRole($this->guru, 'guru', $this->tenant->id);
 
         $this->schoolYear = SchoolYear::create([
             'tenant_id' => $this->tenant->id,
@@ -73,6 +79,7 @@ class AttendanceModuleTest extends TestCase
             'school_year_id' => $this->schoolYear->id,
             'name' => '7A',
             'grade' => '7',
+            'teacher_id' => $this->guru->id,
         ]);
 
         $this->siswa = Student::create([
@@ -203,5 +210,97 @@ class AttendanceModuleTest extends TestCase
         $this->assertTrue(
             str_contains($response->headers->get('content-disposition'), 'attachment; filename=rekap_presensi_7a_')
         );
+    }
+
+    #[Test]
+    public function guru_can_access_own_class_attendance_and_recap(): void
+    {
+        // Guru can access their own class
+        $response = $this->actingAs($this->guru)->get(route('attendance.grid', ['class' => $this->class7A->id]));
+        $response->assertOk();
+
+        // Guru can access their own class recap
+        $response = $this->actingAs($this->guru)->get(route('attendance.rekap', [
+            'class_id' => $this->class7A->id,
+            'month' => now()->format('Y-m'),
+        ]));
+        $response->assertOk();
+    }
+
+    #[Test]
+    public function guru_cannot_access_other_teachers_class_attendance_or_recap(): void
+    {
+        // Create another teacher and class
+        $guruLain = User::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Guru Lain',
+            'email' => 'guru_lain@presensi.mts',
+            'phone' => '628000000088',
+            'password' => bcrypt('password'),
+            'role_display' => 'guru',
+        ]);
+        
+        $roleService = new \App\Services\TenantRoleService();
+        $roleService->assignRole($guruLain, 'guru', $this->tenant->id);
+
+        $classLain = SchoolClass::create([
+            'tenant_id' => $this->tenant->id,
+            'school_year_id' => $this->schoolYear->id,
+            'name' => '7B',
+            'grade' => '7',
+            'teacher_id' => $guruLain->id,
+        ]);
+
+        // Guru 1 (this->guru) attempts to access class7B which belongs to Guru Lain
+        $response = $this->actingAs($this->guru)->get(route('attendance.grid', ['class' => $classLain->id]));
+        $response->assertStatus(403);
+
+        // Guru 1 attempts to view recap of class7B
+        $response = $this->actingAs($this->guru)->get(route('attendance.rekap', [
+            'class_id' => $classLain->id,
+            'month' => now()->format('Y-m'),
+        ]));
+        $response->assertStatus(403);
+
+        // Guru 1 attempts to save attendance of class7B
+        $response = $this->actingAs($this->guru)->postJson(route('attendance.store'), [
+            'class_id' => $classLain->id,
+            'date' => now()->toDateString(),
+            'records' => [['student_id' => $this->siswa->id, 'status' => 'H']],
+        ]);
+        $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function unauthorized_roles_blocked_from_attendance_module(): void
+    {
+        // Create a user with 'bendahara' role who has no attendance permissions
+        $bendahara = User::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Bendahara Presensi',
+            'email' => 'bendahara@presensi.mts',
+            'phone' => '628000000099',
+            'password' => bcrypt('password'),
+            'role_display' => 'bendahara',
+        ]);
+
+        $roleService = new \App\Services\TenantRoleService();
+        $roleService->assignRole($bendahara, 'bendahara', $this->tenant->id);
+
+        // Try to access attendance index page
+        $response = $this->actingAs($bendahara)->get(route('attendance.index'));
+        $response->assertStatus(403);
+
+        // Try to access attendance grid page
+        $response = $this->actingAs($bendahara)->get(route('attendance.grid', ['class' => $this->class7A->id]));
+        $response->assertStatus(403);
+
+        // Try to store attendance
+        $response = $this->actingAs($bendahara)->postJson(route('attendance.store'), [
+            'class_id' => $this->class7A->id,
+            'date' => now()->toDateString(),
+            'records' => [['student_id' => $this->siswa->id, 'status' => 'H']],
+        ]);
+        $response->assertStatus(403);
     }
 }

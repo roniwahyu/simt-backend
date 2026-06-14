@@ -19,12 +19,32 @@ class AttendanceController extends Controller
 {
     public function index(Request $request): View
     {
-        $classes = SchoolClass::with('schoolYear')->get();
+        $user = $request->user();
+
+        // 1. General permission check
+        if (! $user->can('view_attendance')) {
+            abort(403, 'Anda tidak memiliki akses ke halaman presensi.');
+        }
+
+        // 2. Get authorized classes based on user role
+        if ($user->hasRole('guru')) {
+            // Teachers can only view/manage their assigned classes
+            $classes = SchoolClass::with('schoolYear')->where('teacher_id', $user->id)->get();
+        } else {
+            // Admins, TU, and Kepala Madrasah can view all classes
+            $classes = SchoolClass::with('schoolYear')->get();
+        }
+
         $selectedClass = $request->input('class_id');
         $date = $request->input('date', now()->toDateString());
 
         $students = collect();
         if ($selectedClass) {
+            // 3. Ensure the selected class is authorized for the current user
+            if (! $classes->contains('id', $selectedClass)) {
+                abort(403, 'Anda tidak memiliki akses ke data presensi kelas ini.');
+            }
+
             $class = SchoolClass::with(['students' => fn ($q) => $q->where('status', 'active')])->find($selectedClass);
             if ($class) {
                 $students = $class->students;
@@ -43,18 +63,31 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Grid presensi untuk kelas tertentu (route-model-binding /attendance/class/{class}).
+     * Grid presensi untuk kelas tertentu (route-model-binding /attendance/class/{class}/{date?}).
      * Reuse index() dengan kelas yang sudah dipilih agar konsisten dengan UI grid.
      */
-    public function classGrid(Request $request, SchoolClass $class): View
+    public function classGrid(Request $request, SchoolClass $class, ?string $date = null): View
     {
         $request->merge(['class_id' => $class->id]);
+        if ($date) {
+            $request->merge(['date' => $date]);
+        }
 
         return $this->index($request);
     }
 
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        // 1. Check if user has permission to mark or edit attendance
+        if (! $user->can('mark_attendance') && ! $user->can('edit_attendance')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses untuk menyimpan presensi.',
+            ], 403);
+        }
+
         $request->validate([
             'class_id' => 'required|exists:school_classes,id',
             'date' => 'required|date',
@@ -64,6 +97,18 @@ class AttendanceController extends Controller
         ]);
 
         $classId = $request->input('class_id');
+
+        // 2. Restrict teachers (guru) to their assigned classes
+        if ($user->hasRole('guru')) {
+            $class = SchoolClass::find($classId);
+            if (! $class || $class->teacher_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menyimpan presensi kelas ini.',
+                ], 403);
+            }
+        }
+
         // Normalisasi ke Y-m-d agar updateOrCreate cocok dengan baris yang sudah ada.
         // (kolom `date` di-cast date → tersimpan 00:00:00; tanpa normalisasi,
         //  pembandingan string gagal cocok → duplikat & melanggar unique(student,date)).
@@ -126,6 +171,17 @@ class AttendanceController extends Controller
         ]);
 
         $class = SchoolClass::with('students')->find($request->input('class_id'));
+        if (! $class) {
+            abort(404);
+        }
+
+        $user = $request->user();
+        $isTeacherOfClass = ($user->hasRole('guru') && $class->teacher_id === $user->id);
+
+        if (! $isTeacherOfClass && ! $user->can('view_attendance_rekap')) {
+            abort(403, 'Anda tidak memiliki akses ke rekap presensi kelas ini.');
+        }
+
         $month = $request->input('month');
         $students = $class->students;
 
@@ -153,6 +209,17 @@ class AttendanceController extends Controller
         ]);
 
         $class = SchoolClass::find($request->input('class_id'));
+        if (! $class) {
+            abort(404);
+        }
+
+        $user = $request->user();
+        $isTeacherOfClass = ($user->hasRole('guru') && $class->teacher_id === $user->id);
+
+        if (! $isTeacherOfClass && ! $user->can('view_attendance_rekap')) {
+            abort(403, 'Anda tidak memiliki akses ke ekspor rekap presensi kelas ini.');
+        }
+
         $month = $request->input('month');
 
         $fileName = 'rekap_presensi_' . str_replace(' ', '_', strtolower($class->name)) . '_' . $month . '.xlsx';
