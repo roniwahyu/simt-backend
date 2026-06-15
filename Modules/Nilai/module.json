@@ -1,0 +1,11 @@
+{
+    "name": "Nilai",
+    "alias": "nilai",
+    "description": "Modul pengelolaan nilai dan rapor siswa",
+    "keywords": ["nilai", "rapor", "ujian"],
+    "priority": 4,
+    "providers": [
+        "Modules\\Nilai\\Providers\\NilaiServiceProvider"
+    ],
+    "files": []
+}

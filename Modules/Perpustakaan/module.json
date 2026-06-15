@@ -1,0 +1,11 @@
+{
+    "name": "Perpustakaan",
+    "alias": "perpustakaan",
+    "description": "Modul pengelolaan perpustakaan madrasah",
+    "keywords": ["perpustakaan", "buku", "peminjaman"],
+    "priority": 7,
+    "providers": [
+        "Modules\\Perpustakaan\\Providers\\PerpustakaanServiceProvider"
+    ],
+    "files": []
+}

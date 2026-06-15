@@ -1,0 +1,11 @@
+{
+    "name": "Pegawai",
+    "alias": "pegawai",
+    "description": "Modul pengelolaan data guru dan tenaga kependidikan",
+    "keywords": ["pegawai", "guru", "tenaga kependidikan"],
+    "priority": 5,
+    "providers": [
+        "Modules\\Pegawai\\Providers\\PegawaiServiceProvider"
+    ],
+    "files": []
+}

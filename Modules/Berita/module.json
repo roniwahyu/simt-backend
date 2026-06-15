@@ -1,0 +1,11 @@
+{
+    "name": "Berita",
+    "alias": "berita",
+    "description": "Modul pengelolaan berita dan pengumuman madrasah",
+    "keywords": ["berita", "pengumuman", "artikel"],
+    "priority": 12,
+    "providers": [
+        "Modules\\Berita\\Providers\\BeritaServiceProvider"
+    ],
+    "files": []
+}

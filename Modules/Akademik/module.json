@@ -1,0 +1,11 @@
+{
+    "name": "Akademik",
+    "alias": "akademik",
+    "description": "Modul pengelolaan data akademik, kelas, dan mata pelajaran",
+    "keywords": ["akademik", "kelas", "mata pelajaran"],
+    "priority": 1,
+    "providers": [
+        "Modules\\Akademik\\Providers\\AkademikServiceProvider"
+    ],
+    "files": []
+}

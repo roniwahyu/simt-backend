@@ -1,0 +1,11 @@
+{
+    "name": "Pendaftaran",
+    "alias": "pendaftaran",
+    "description": "Modul pendaftaran siswa baru dan siswa pindahan",
+    "keywords": ["pendaftaran", "registrasi", "siswa baru"],
+    "priority": 0,
+    "providers": [
+        "Modules\\Pendaftaran\\Providers\\PendaftaranServiceProvider"
+    ],
+    "files": []
+}

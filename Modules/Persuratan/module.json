@@ -1,0 +1,11 @@
+{
+    "name": "Persuratan",
+    "alias": "persuratan",
+    "description": "Modul pengelolaan surat menyurat madrasah",
+    "keywords": ["persuratan", "surat", "dokumen"],
+    "priority": 6,
+    "providers": [
+        "Modules\\Persuratan\\Providers\\PersuratanServiceProvider"
+    ],
+    "files": []
+}

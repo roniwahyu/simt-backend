@@ -1,0 +1,11 @@
+{
+    "name": "Ppdb",
+    "alias": "ppdb",
+    "description": "Modul penerimaan peserta didik baru (online)",
+    "keywords": ["ppdb", "penerimaan", "pendaftaran", "siswa baru"],
+    "priority": 11,
+    "providers": [
+        "Modules\\Ppdb\\Providers\\PpdbServiceProvider"
+    ],
+    "files": []
+}

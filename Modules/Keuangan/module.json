@@ -1,0 +1,11 @@
+{
+    "name": "Keuangan",
+    "alias": "keuangan",
+    "description": "Modul pengelolaan SPP, pembayaran, dan keuangan madrasah",
+    "keywords": ["keuangan", "spp", "pembayaran"],
+    "priority": 3,
+    "providers": [
+        "Modules\\Keuangan\\Providers\\KeuanganServiceProvider"
+    ],
+    "files": []
+}

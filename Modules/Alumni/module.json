@@ -1,0 +1,11 @@
+{
+    "name": "Alumni",
+    "alias": "alumni",
+    "description": "Modul pengelolaan data alumni madrasah",
+    "keywords": ["alumni", "lulusan", "tracer study"],
+    "priority": 10,
+    "providers": [
+        "Modules\\Alumni\\Providers\\AlumniServiceProvider"
+    ],
+    "files": []
+}
