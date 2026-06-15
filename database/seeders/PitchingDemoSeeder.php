@@ -95,6 +95,32 @@ class PitchingDemoSeeder extends Seeder
         );
         $roleService->assignRole($budi, 'tu', $t1->id);
 
+        // [2026-06-16 | AG] Tambah user Bendahara untuk demo login
+        $farhan = User::firstOrCreate(
+            ['email' => 'farhan@mts-alhikmah.sch.id'],
+            [
+                'tenant_id' => $t1->id,
+                'name' => 'Farhan (Bendahara)',
+                'phone' => '628123456013',
+                'password' => Hash::make('password'),
+                'role_display' => 'bendahara',
+            ]
+        );
+        $roleService->assignRole($farhan, 'bendahara', $t1->id);
+
+        // [2026-06-16 | AG] Tambah user Kepala Madrasah untuk demo login
+        $hasan = User::firstOrCreate(
+            ['email' => 'hasan@mts-alhikmah.sch.id'],
+            [
+                'tenant_id' => $t1->id,
+                'name' => 'Hasan (Kepsek)',
+                'phone' => '628123456014',
+                'password' => Hash::make('password'),
+                'role_display' => 'kepala_madrasah',
+            ]
+        );
+        $roleService->assignRole($hasan, 'kepala_madrasah', $t1->id);
+
         $sy1 = SchoolYear::firstOrCreate(
             ['tenant_id' => $t1->id, 'name' => '2026/2027'],
             ['start_date' => '2026-07-01', 'end_date' => '2027-06-30', 'is_active' => true]

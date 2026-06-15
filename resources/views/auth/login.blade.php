@@ -137,7 +137,7 @@
                     
                     <!-- Card 1: Superadmin -->
                     <div onclick="selectAccount('vendor@simt.id', 'password', this)" 
-                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-blue-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
+                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-red-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
                         <div class="flex items-start justify-between">
                             <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,27 @@
                         </div>
                     </div>
 
-                    <!-- Card 2: Admin Sekolah -->
+                    <!-- Card 2: Kepala Madrasah -->
+                    <div onclick="selectAccount('hasan@mts-alhikmah.sch.id', 'password', this)" 
+                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-purple-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                                </svg>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                                Kepsek
+                            </span>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Kepala Madrasah (T1)</div>
+                            <div class="text-xs text-slate-400 mt-1 truncate">hasan@mts-alhikmah.sch.id</div>
+                            <div class="text-[10px] text-slate-500 mt-2 font-medium">Rekap presensi, laporan, & keuangan</div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Admin Sekolah -->
                     <div onclick="selectAccount('ahmad@mts-alhikmah.sch.id', 'password', this)" 
                         class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-blue-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
                         <div class="flex items-start justify-between">
@@ -169,15 +189,55 @@
                             </span>
                         </div>
                         <div>
-                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Admin Sekolah (Tenant 1)</div>
+                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Admin Sekolah (T1)</div>
                             <div class="text-xs text-slate-400 mt-1 truncate">ahmad@mts-alhikmah.sch.id</div>
-                            <div class="text-[10px] text-slate-500 mt-2 font-medium">MTs Al-Hikmah — Modul Lengkap</div>
+                            <div class="text-[10px] text-slate-500 mt-2 font-medium">MTs Al-Hikmah — Akses Penuh Modul</div>
                         </div>
                     </div>
 
-                    <!-- Card 3: Guru -->
-                    <div onclick="selectAccount('ahmad@mts-annur.sch.id', 'password', this)" 
-                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-blue-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
+                    <!-- Card 4: Tata Usaha (TU) -->
+                    <div onclick="selectAccount('budi@mts-alhikmah.sch.id', 'password', this)" 
+                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-cyan-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                </svg>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                                Tata Usaha
+                            </span>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Tata Usaha (T1)</div>
+                            <div class="text-xs text-slate-400 mt-1 truncate">budi@mts-alhikmah.sch.id</div>
+                            <div class="text-[10px] text-slate-500 mt-2 font-medium">Kelola siswa, absensi, & WhatsApp</div>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: Bendahara -->
+                    <div onclick="selectAccount('farhan@mts-alhikmah.sch.id', 'password', this)" 
+                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-indigo-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                                Bendahara
+                            </span>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Bendahara (T1)</div>
+                            <div class="text-xs text-slate-400 mt-1 truncate">farhan@mts-alhikmah.sch.id</div>
+                            <div class="text-[10px] text-slate-500 mt-2 font-medium">Kelola SPP, pembayaran, & invoice</div>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: Guru -->
+                    <div onclick="selectAccount('siti@mts-alhikmah.sch.id', 'password', this)" 
+                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-emerald-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
                         <div class="flex items-start justify-between">
                             <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,15 +249,15 @@
                             </span>
                         </div>
                         <div>
-                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Guru (Tenant 2)</div>
-                            <div class="text-xs text-slate-400 mt-1 truncate">ahmad@mts-annur.sch.id</div>
-                            <div class="text-[10px] text-slate-500 mt-2 font-medium">MTs An-Nur — Tanpa Modul Keuangan</div>
+                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Guru / Wali Kelas (T1)</div>
+                            <div class="text-xs text-slate-400 mt-1 truncate">siti@mts-alhikmah.sch.id</div>
+                            <div class="text-[10px] text-slate-500 mt-2 font-medium">Input presensi kelas & lihat siswa</div>
                         </div>
                     </div>
 
-                    <!-- Card 4: Wali Murid -->
+                    <!-- Card 7: Wali Murid -->
                     <div onclick="selectAccount('628520000001', 'password', this)" 
-                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-blue-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
+                        class="demo-card group cursor-pointer transition-all duration-300 border border-slate-800/80 hover:border-amber-500 bg-slate-950/40 hover:bg-slate-900/60 p-4 rounded-xl flex flex-col justify-between space-y-3 md:col-span-2">
                         <div class="flex items-start justify-between">
                             <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,9 +269,9 @@
                             </span>
                         </div>
                         <div>
-                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Wali Murid (Tenant 1)</div>
-                            <div class="text-xs text-slate-400 mt-1 truncate">HP: 628520000001</div>
-                            <div class="text-[10px] text-slate-500 mt-2 font-medium">Wali Muhammad Rizki di Al-Hikmah</div>
+                            <div class="font-bold text-slate-200 group-hover:text-white transition-colors text-sm">Wali Murid (T1)</div>
+                            <div class="text-xs text-slate-400 mt-1 truncate">No. HP: 628520000001</div>
+                            <div class="text-[10px] text-slate-500 mt-2 font-medium">Wali dari Muhammad Rizki (MTs Al-Hikmah)</div>
                         </div>
                     </div>
 
