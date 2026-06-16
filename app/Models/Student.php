@@ -14,13 +14,28 @@ class Student extends Authenticatable
     use BelongsToTenant, Auditable, HasApiTokens;
 
     protected $fillable = [
-        'tenant_id', 'nis', 'nisn', 'name', 'gender', 'birth_date', 'birth_place', 'address', 'status',
+        'tenant_id', 'nis', 'nisn', 'nisn_bindex', 'name', 'gender', 'birth_date', 'birth_place', 'address', 'status',
         'photo', 'father_name', 'father_phone', 'mother_name', 'mother_phone', 'parent_email', 'student_password'
     ];
 
     protected $casts = [
         'birth_date' => 'date',
     ];
+
+    /**
+     * Auto-generate nisn_bindex saat saving model
+     * untuk kepatuhan UU PDP No.27/2022
+     */
+    protected static function booted(): void
+    {
+        static::saving(function ($student) {
+            if ($student->isDirty('nisn')) {
+                $student->nisn_bindex = $student->nisn
+                    ? hash_hmac('sha256', $student->nisn, config('app.key'))
+                    : null;
+            }
+        });
+    }
 
     public function guardians(): BelongsToMany
     {
