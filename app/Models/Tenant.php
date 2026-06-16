@@ -12,8 +12,11 @@ class Tenant extends Model
 
     protected $fillable = ['name', 'domain', 'phone', 'address', 'status', 'activated_at', 'grace_until', 'settings'];
 
-
-
+    protected $casts = [
+        'settings' => 'array',
+        'activated_at' => 'datetime',
+        'grace_until' => 'datetime',
+    ];
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'tenant_id');

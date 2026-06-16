@@ -14,8 +14,10 @@ class Attendance extends Model
         'tenant_id', 'student_id', 'class_id', 'date', 'status', 'arrival_time', 'notes', 'marked_by'
     ];
 
-
-
+    protected $casts = [
+        'date' => 'date:Y-m-d',
+        'arrival_time' => 'datetime:H:i',
+    ];
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id');

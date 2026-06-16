@@ -9,8 +9,10 @@ class TenantModule extends Model
 {
     protected $fillable = ['tenant_id', 'module_code', 'active', 'active_until'];
 
-
-
+    protected $casts = [
+        'active' => 'boolean',
+        'active_until' => 'datetime',
+    ];
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class, 'tenant_id');

@@ -12,8 +12,10 @@ class Invoice extends Model
 
     protected $fillable = ['tenant_id', 'period', 'amount', 'status', 'paid_at', 'payment_method'];
 
-
-
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'paid_at' => 'datetime',
+    ];
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class, 'tenant_id');

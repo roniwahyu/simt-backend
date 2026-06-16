@@ -16,10 +16,9 @@ class Student extends Model
         'tenant_id', 'nis', 'nisn', 'name', 'gender', 'birth_date', 'birth_place', 'address', 'status'
     ];
 
-
-
-
-
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
 
     public function guardians(): BelongsToMany
     {
