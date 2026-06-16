@@ -54,7 +54,8 @@ class DashboardController extends Controller
         }
 
         $logs = $query->paginate(50)->withQueryString();
-        $users = \App\Models\User::select('id', 'name')->get();
+        $tenantId = app(\App\Support\Tenancy::class)->tenantId();
+        $users = \App\Models\User::where('tenant_id', $tenantId)->select('id', 'name')->get();
 
         return view('core::dashboard.audit_logs', compact('logs', 'users'));
     }
