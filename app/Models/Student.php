@@ -7,13 +7,15 @@ use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens;
 
 class Student extends Model
 {
-    use BelongsToTenant, Auditable;
+    use BelongsToTenant, Auditable, HasApiTokens;
 
     protected $fillable = [
-        'tenant_id', 'nis', 'nisn', 'name', 'gender', 'birth_date', 'birth_place', 'address', 'status'
+        'tenant_id', 'nis', 'nisn', 'name', 'gender', 'birth_date', 'birth_place', 'address', 'status',
+        'photo', 'father_name', 'father_phone', 'mother_name', 'mother_phone', 'parent_email', 'student_password'
     ];
 
     protected $casts = [
@@ -49,6 +51,26 @@ class Student extends Model
         return $this->hasMany(Payment::class, 'student_id');
     }
 
+    public function violations(): HasMany
+    {
+        return $this->hasMany(StudentViolation::class, 'student_id');
+    }
+
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(StudentAchievement::class, 'student_id');
+    }
+
+    public function tahfizRecords(): HasMany
+    {
+        return $this->hasMany(TahfizRecord::class, 'student_id');
+    }
+
+    public function gradeDetails(): HasMany
+    {
+        return $this->hasMany(GradeDetail::class, 'student_id');
+    }
+
     public function currentClass(): ?SchoolClass
     {
         $activeYear = SchoolYear::where('tenant_id', $this->tenant_id)->where('is_active', true)->first();
@@ -59,3 +81,4 @@ class Student extends Model
             ->first();
     }
 }
+
