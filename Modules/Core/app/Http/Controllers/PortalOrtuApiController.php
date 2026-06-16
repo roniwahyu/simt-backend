@@ -87,8 +87,19 @@ class PortalOrtuApiController extends Controller
         }
 
         // Check password (plain text check for MVP compatibility, fallback to Hash if hashed)
-        $passwordMatches = $student->student_password === $request->input('password') 
-            || Hash::check($request->input('password'), $student->student_password);
+        $passwordMatches = false;
+        if ($student->student_password === $request->input('password')) {
+            $passwordMatches = true;
+        } else {
+            // Only try Hash::check if it looks like a bcrypt hash (starts with $2)
+            if (str_starts_with($student->student_password, '$2')) {
+                try {
+                    $passwordMatches = Hash::check($request->input('password'), $student->student_password);
+                } catch (\Throwable $e) {
+                    $passwordMatches = false;
+                }
+            }
+        }
 
         if (!$passwordMatches) {
             return response()->json([
