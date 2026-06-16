@@ -1,0 +1,13 @@
+{
+    "name": "Tahfiz",
+    "alias": "tahfiz",
+    "description": "Modul Tahfiz (Plug & Play) — Hafalan, Murajaah, Ziyadah",
+    "keywords": [],
+    "priority": 4,
+    "providers": [
+        "Modules\\Tahfiz\\Providers\\TahfizServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

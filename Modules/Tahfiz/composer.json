@@ -1,0 +1,10 @@
+{
+    "name": "nwidart/tahfiz",
+    "description": "Tahfiz Module for SIMT MTs",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Tahfiz\\": "app/",
+            "Modules\\Tahfiz\\Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}
