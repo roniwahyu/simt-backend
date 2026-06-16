@@ -35,4 +35,27 @@ class DashboardController extends Controller
 
         return view('core::dashboard', compact('user', 'tenant', 'stats', 'recentAttendances', 'today'));
     }
+
+    public function auditLogs(Request $request): View
+    {
+        $query = \App\Models\AuditLog::with(['user'])->orderBy('id', 'desc');
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+        if ($request->filled('event')) {
+            $query->where('event', $request->input('event'));
+        }
+        if ($request->filled('auditable_type')) {
+            $query->where('auditable_type', 'App\\Models\\' . $request->input('auditable_type'));
+        }
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->input('date'));
+        }
+
+        $logs = $query->paginate(50)->withQueryString();
+        $users = \App\Models\User::select('id', 'name')->get();
+
+        return view('core::dashboard.audit_logs', compact('logs', 'users'));
+    }
 }

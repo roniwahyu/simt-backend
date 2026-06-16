@@ -15,7 +15,15 @@ class SuperAdminController extends Controller
 {
     public function dashboard(): View
     {
-        $tenants = Tenant::withCount('users')->latest()->paginate(20);
+        $tenants = Tenant::withCount([
+            'users',
+            'students',
+            'classes',
+            'modules' => function ($q) {
+                $q->where('active', true);
+            }
+        ])->latest()->paginate(20);
+
         $stats = [
             'total_tenants' => Tenant::count(),
             'active_tenants' => Tenant::where('status', 'active')->count(),
@@ -97,6 +105,33 @@ class SuperAdminController extends Controller
             }
         }
 
-        return redirect()->route('super.edit-tenant', $tenant)->with('success', 'Tenant diperbarui.');
+        return redirect()->route('super.tenant.edit', $tenant)->with('success', 'Tenant diperbarui.');
+    }
+
+    public function auditLogs(Request $request): View
+    {
+        $query = \App\Models\AuditLog::with(['tenant', 'user'])->orderBy('id', 'desc');
+
+        if ($request->filled('tenant_id')) {
+            $query->where('tenant_id', $request->input('tenant_id'));
+        }
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+        if ($request->filled('event')) {
+            $query->where('event', $request->input('event'));
+        }
+        if ($request->filled('auditable_type')) {
+            $query->where('auditable_type', 'App\\Models\\' . $request->input('auditable_type'));
+        }
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->input('date'));
+        }
+
+        $logs = $query->paginate(50)->withQueryString();
+        $tenants = Tenant::select('id', 'name')->get();
+        $users = User::select('id', 'name')->get();
+
+        return view('core::super.audit_logs', compact('logs', 'tenants', 'users'));
     }
 }

@@ -15,9 +15,12 @@ class StudentApiController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('nis', 'like', "%{$search}%")
-                ->orWhere('nisn', 'like', "%{$search}%");
+            $hashedSearch = hash_hmac('sha256', $search, config('app.key'));
+            $query->where(function ($q) use ($search, $hashedSearch) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
+                  ->orWhere('nisn_bindex', $hashedSearch);
+            });
         }
 
         if ($request->filled('class_id')) {

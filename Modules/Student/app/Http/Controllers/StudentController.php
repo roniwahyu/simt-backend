@@ -18,9 +18,13 @@ class StudentController extends Controller
         $query = Student::query()->with('classes.schoolYear');
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->input('search') . '%')
-                ->orWhere('nis', 'like', '%' . $request->input('search') . '%')
-                ->orWhere('nisn', 'like', '%' . $request->input('search') . '%');
+            $search = $request->input('search');
+            $hashedSearch = hash_hmac('sha256', $search, config('app.key'));
+            $query->where(function ($q) use ($search, $hashedSearch) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('nis', 'like', '%' . $search . '%')
+                  ->orWhere('nisn_bindex', $hashedSearch);
+            });
         }
 
         if ($request->filled('class_id')) {
@@ -42,10 +46,17 @@ class StudentController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $tenantId = app(\App\Support\Tenancy::class)->tenantId();
+        if ($request->filled('nisn')) {
+            $request->merge([
+                'nisn_bindex' => hash_hmac('sha256', $request->input('nisn'), config('app.key'))
+            ]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'nis' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('students', 'nis')->where('tenant_id', $tenantId)],
-            'nisn' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('students', 'nisn')->where('tenant_id', $tenantId)],
+            'nisn' => ['nullable', 'string', 'max:50'],
+            'nisn_bindex' => ['nullable', \Illuminate\Validation\Rule::unique('students', 'nisn_bindex')->where('tenant_id', $tenantId)],
             'gender' => 'nullable|in:L,P',
             'birth_date' => 'nullable|date',
             'birth_place' => 'nullable|string|max:100',
@@ -53,6 +64,8 @@ class StudentController extends Controller
             'class_id' => 'nullable|exists:school_classes,id',
             'guardian_phone' => 'nullable|string|max:20',
             'guardian_name' => 'nullable|string|max:255',
+        ], [
+            'nisn_bindex.unique' => 'NISN sudah terdaftar.',
         ]);
 
         $student = Student::create($request->only([
@@ -94,14 +107,23 @@ class StudentController extends Controller
     public function update(Request $request, Student $student): RedirectResponse
     {
         $tenantId = app(\App\Support\Tenancy::class)->tenantId();
+        if ($request->filled('nisn')) {
+            $request->merge([
+                'nisn_bindex' => hash_hmac('sha256', $request->input('nisn'), config('app.key'))
+            ]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'nis' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('students', 'nis')->where('tenant_id', $tenantId)->ignore($student->id)],
-            'nisn' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('students', 'nisn')->where('tenant_id', $tenantId)->ignore($student->id)],
+            'nisn' => ['nullable', 'string', 'max:50'],
+            'nisn_bindex' => ['nullable', \Illuminate\Validation\Rule::unique('students', 'nisn_bindex')->where('tenant_id', $tenantId)->ignore($student->id)],
             'gender' => 'nullable|in:L,P',
             'birth_date' => 'nullable|date',
             'birth_place' => 'nullable|string|max:100',
             'address' => 'nullable|string',
+        ], [
+            'nisn_bindex.unique' => 'NISN sudah terdaftar.',
         ]);
 
         $student->update($request->only([
