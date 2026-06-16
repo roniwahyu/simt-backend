@@ -35,7 +35,9 @@
                 @endcanany
 
                 @canany(['view_bills','record_payment'])
-                <a href="{{ route('finance.bills') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('finance.*') ? 'bg-slate-700' : '' }}">Keuangan</a>
+                <!-- [2026-06-16 | AG] Arahkan menu Keuangan ke Dashboard Keuangan -->
+                <!-- <a href="{{ route('finance.bills') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('finance.*') ? 'bg-slate-700' : '' }}">Keuangan</a> -->
+                <a href="{{ route('finance.dashboard') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('finance.*') ? 'bg-slate-700' : '' }}">Keuangan</a>
                 @endcanany
 
                 <a href="{{ route('notification.connect') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('notification.connect') ? 'bg-slate-700' : '' }}">WA Connect</a>
