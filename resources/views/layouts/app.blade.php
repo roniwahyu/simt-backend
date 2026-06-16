@@ -26,6 +26,10 @@
                 <a href="{{ route('students.index') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('students.*') ? 'bg-slate-700' : '' }}">Kesiswaan</a>
                 @endcanany
 
+                @if(app('currentTenant')?->hasModule('Akademik'))
+                <a href="{{ route('akademik.index') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('akademik.*') || request()->routeIs('grades.*') ? 'bg-slate-700' : '' }}">Akademik</a>
+                @endif
+
                 @canany(['mark_attendance','view_attendance'])
                 <a href="{{ route('attendance.index') }}" class="block px-3 py-2 rounded hover:bg-slate-700 {{ request()->routeIs('attendance.*') ? 'bg-slate-700' : '' }}">Presensi</a>
                 @endcanany
