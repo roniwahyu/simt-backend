@@ -38,6 +38,8 @@ class FinanceModuleTest extends TestCase
     {
         parent::setUp();
 
+        \Illuminate\Support\Facades\Http::fake();
+
         // Seed roles & permissions
         $this->seed(\Database\Seeders\RolePermissionSeeder::class);
 
