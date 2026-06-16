@@ -98,3 +98,29 @@ Seluruh test suite dari modul `Student`, `Attendance`, `Finance`, `Notification`
 
 ## 6. Kesimpulan & Status
 Modul **Akademik** telah selesai 100% dan siap digunakan di lingkungan demonstrasi atau produksi. Fitur multi-tenant terisolasi dengan aman, sistem rendering rapor PDF menggunakan DomPDF berjalan lancar, dan seluruh pengujian otomatis terverifikasi hijau.
+
+---
+
+## 7. Catatan Revisi & Pembaruan (Revision History)
+
+### Revisi 1.1: Penambahan REST API, Hardening Security & API Verification
+**Tanggal Pembaruan:** 16 Juni 2026 (08:00 Local Time)  
+**Status:** Completed & Verified  
+
+Pembaruan dilakukan untuk memenuhi syarat keamanan tingkat tinggi, integrasi client external (Portal Ortu - Next.js), dan validasi silang tenant.
+
+#### A. Komponen Tambahan yang Diimplementasikan
+* **`AkademikApiController.php`** ([AkademikApiController.php](file:///d:/laragon/www/simt-backend/Modules/Akademik/app/Http/Controllers/AkademikApiController.php)): Controller API RESTful yang terstandarisasi untuk respons JSON.
+* **REST API Endpoints** ([routes/api.php](file:///d:/laragon/www/simt-backend/Modules/Akademik/routes/api.php)):
+  - `GET /api/v1/students/{student}/grades` (List riwayat nilai siswa individual)
+  - `GET /api/v1/students/{student}/rapor` (Respon data rapor digital)
+
+#### B. Pengerasan Keamanan (Hardening Security) & Multi-Tenant
+* **Validasi Sesi Lintas Tenant:** Menyempurnakan middleware `IdentifyTenant.php` dan `SetTenantFromUser.php` dengan validasi silang `tenant_id` pada user session dengan context subdomain tenant.
+* **API Ownership Protection:** Membatasi role `wali` agar hanya dapat melihat data nilai/rapor dari siswa yang didelegasikan padanya (diperiksa via `guardianStudents` relationship). Akses tidak sah diblokir dengan kode `403 FORBIDDEN_OWNERSHIP`.
+
+#### C. Penyesuaian Uji Otomatis & Autoload
+* Autoload class bertambah 1 menjadi **8.538 class**.
+* Skenario test modul Akademik bertambah 3 (`wali_can_access_student_grades_and_rapor_via_api`, `wali_cannot_access_other_students_grades_via_api`, `akademik_api_module_disabled_returns_403`).
+* **Hasil Uji Akademik:** `9 passed (29 assertions)`
+* **Hasil Uji Seluruh Sistem:** `49 passed (129 assertions)`
