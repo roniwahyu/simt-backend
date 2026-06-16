@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Student extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTenant, Auditable;
 
     protected $fillable = [
         'tenant_id', 'nis', 'nisn', 'name', 'gender', 'birth_date', 'birth_place', 'address', 'status'
@@ -17,7 +18,9 @@ class Student extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'address' => 'encrypted',
     ];
+
 
     public function guardians(): BelongsToMany
     {

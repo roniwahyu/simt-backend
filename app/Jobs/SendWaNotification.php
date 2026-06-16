@@ -81,6 +81,7 @@ class SendWaNotification implements ShouldQueue
             'attendance' => "[SIMT] Informasi Presensi\n\nAnanda: {$payload['student_name']}\nKelas: {$payload['class']}\nStatus: {$payload['status']}\nTanggal: {$payload['date']}\n\nSemoga harinya menyenangkan. 😊",
             'bill_reminder' => "[SIMT] Pengingat Pembayaran\n\nAnanda: {$payload['student_name']}\nTagihan: {$payload['component']} periode {$payload['period']}\nJumlah: Rp " . number_format($payload['amount'], 0, ',', '.') . "\n\nSilakan melakukan pembayaran ke bendahara sekolah. Terima kasih.",
             'credential' => "[SIMT] Akun Portal Orang Tua\n\nNo. HP: {$payload['phone']}\nPassword: {$payload['password']}\n\nLogin di: https://portal.simt.id\nHarap segera ganti password setelah login.",
+            'payment_receipt' => "[SIMT] Bukti Pembayaran\n\nTerima kasih, pembayaran SPP telah diterima.\n\nAnanda: {$payload['student_name']}\nNominal: Rp " . number_format($payload['amount'], 0, ',', '.') . "\nKwitansi: {$payload['receipt_no']}\nTanggal: {$payload['date']}\n\nTerima kasih atas partisipasi Anda. 😊",
             default => $payload['message'] ?? 'Pesan dari SIMT.',
         };
     }

@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTenant, Auditable;
 
     protected $fillable = [
         'tenant_id', 'bill_id', 'student_id', 'amount', 'payment_date', 'method', 'reference', 'receipt_no', 'recorded_by', 'notes'
