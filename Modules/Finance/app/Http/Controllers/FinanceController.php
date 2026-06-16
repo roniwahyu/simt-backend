@@ -138,7 +138,7 @@ class FinanceController extends Controller
 
     public function printReceipt(Payment $payment): \Illuminate\Http\Response
     {
-        $pdf = Pdf::loadView('pdf.receipt', ['payment' => $payment, 'tenant' => app(\App\Support\Tenancy::class)->tenant()]);
+        $pdf = Pdf::loadView('finance::receipt', ['payment' => $payment, 'tenant' => app(\App\Support\Tenancy::class)->tenant()]);
         return $pdf->stream('Kwitansi-' . $payment->receipt_no . '.pdf');
     }
 
