@@ -67,6 +67,18 @@ class IdentifyTenant
 
         $this->tenancy->setTenant($tenant);
 
+        // [2026-06-16 | AG] Penguatan Keamanan Multi-Tenant: Validasi silang User Session dengan Tenant ID
+        if ($request->user() && !$request->user()->isSuperAdmin() && $request->user()->tenant_id !== $tenant->id) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'TENANT_ACCESS_DENIED',
+                    'message' => 'Unauthorized Tenant Access',
+                ], 403);
+            }
+            abort(403, 'Unauthorized Tenant Access');
+        }
+
         return $next($request);
     }
 }
