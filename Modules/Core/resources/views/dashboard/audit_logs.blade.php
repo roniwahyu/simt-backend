@@ -69,7 +69,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($logs as $log)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ $log->created_at?->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s') }} WIB</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ $log->created_at ? \Carbon\Carbon::parse($log->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s') : '-' }} WIB</td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="font-semibold">{{ $log->user->name ?? 'Guest/System' }}</span>
                             @if($log->user)
