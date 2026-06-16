@@ -17,7 +17,7 @@ class Student extends Model
     ];
 
     protected $casts = [
-        'birth_date' => 'encrypted:date',
+        'birth_date' => \App\Casts\EncryptedDate::class,
         'nisn' => 'encrypted',
         'birth_place' => 'encrypted',
         'gender' => 'encrypted',
