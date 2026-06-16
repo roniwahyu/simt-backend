@@ -410,4 +410,54 @@ class FinanceModuleTest extends TestCase
         $response = $this->get(route('finance.bills.export', ['period' => '2026-07']));
         $response->assertOk();
     }
+
+    /** @test */
+    public function student_address_is_encrypted_in_database(): void
+    {
+        $student = Student::create([
+            'tenant_id' => $this->tenant1->id,
+            'nis' => '009',
+            'nisn' => '009009',
+            'name' => 'Siswa Enkripsi',
+            'address' => 'Jalan Kebahagiaan No. 123',
+            'status' => 'active',
+        ]);
+
+        // Pastikan di model didekripsi secara otomatis
+        $this->assertEquals('Jalan Kebahagiaan No. 123', $student->address);
+
+        // Pastikan di database tersimpan dalam bentuk enkripsi (tidak terlihat plain text)
+        $rawStudent = \Illuminate\Support\Facades\DB::table('students')->where('id', $student->id)->first();
+        $this->assertNotEquals('Jalan Kebahagiaan No. 123', $rawStudent->address);
+    }
+
+    /** @test */
+    public function creating_payment_records_audit_log(): void
+    {
+        $bill = Bill::create([
+            'tenant_id' => $this->tenant1->id,
+            'student_id' => $this->student->id,
+            'period' => '2026-07',
+            'component' => 'SPP',
+            'amount' => 500000,
+            'paid_amount' => 0,
+            'status' => 'unpaid',
+        ]);
+
+        $this->actingAs($this->bendahara);
+
+        $response = $this->post(route('finance.payment.store', $bill), [
+            'amount' => 500000,
+            'payment_date' => '2026-07-15',
+            'method' => 'cash',
+        ]);
+
+        // Cek database audit_logs memiliki record untuk Payment created
+        $this->assertDatabaseHas('audit_logs', [
+            'tenant_id' => $this->tenant1->id,
+            'user_id' => $this->bendahara->id,
+            'event' => 'created',
+            'auditable_type' => Payment::class,
+        ]);
+    }
 }
