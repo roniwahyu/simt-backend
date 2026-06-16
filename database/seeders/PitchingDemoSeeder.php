@@ -135,6 +135,28 @@ class PitchingDemoSeeder extends Seeder
             );
         }
 
+        // Create subjects for each class
+        $subjectList = [];
+        foreach ($classes as $className => $classObj) {
+            $subjectDefs = [
+                ['name' => 'Matematika', 'code' => 'MTK', 'cat' => 'UMUM'],
+                ['name' => 'Bahasa Arab', 'code' => 'BAR', 'cat' => 'MUATAN_LOKAL'],
+                ['name' => 'Al-Quran & Hadits', 'code' => 'QHD', 'cat' => 'AGAMA_ISLAM'],
+                ['name' => 'IPA', 'code' => 'IPA', 'cat' => 'UMUM'],
+            ];
+            foreach ($subjectDefs as $sd) {
+                $subjectList[$className][] = \App\Models\Subject::firstOrCreate(
+                    ['tenant_id' => $t1->id, 'school_class_id' => $classObj->id, 'code' => $sd['code']],
+                    [
+                        'name' => $sd['name'],
+                        'hours_per_week' => 4,
+                        'teacher_id' => $siti->id,
+                        'category' => $sd['cat']
+                    ]
+                );
+            }
+        }
+
         // Create 100 students
         $firstNames = ['Ahmad','Muhammad','Fatimah','Aisyah','Umar','Ali','Khadijah','Zainab','Bilal','Siti',
                        'Rizki','Putri','Nur','Dewi','Hafiz','Ibrahim','Rahma','Salsa','Farhan','Lestari'];
@@ -175,6 +197,146 @@ class PitchingDemoSeeder extends Seeder
             $roleService->assignRole($wali, 'wali', $t1->id);
             $student->guardians()->syncWithoutDetaching([$wali->id => ['relation' => 'ayah']]);
 
+            // [2026-06-16 | AG] Update students table with parent details and student portal password
+            $student->update([
+                'photo' => '/uploads/students/photo.jpg',
+                'father_name' => $wali->name,
+                'father_phone' => $wali->phone,
+                'parent_email' => $wali->email,
+                'student_password' => 'siswa123',
+            ]);
+
+            // Seed Grades & Grade Details for this student
+            $studentSubjects = $subjectList[$className] ?? [];
+            foreach ($studentSubjects as $sub) {
+                // Raw Grades
+                $gradeTypes = ['UH1', 'UH2', 'TUGAS1', 'TUGAS2', 'UTS', 'UAS', 'SIKAP', 'PRAKTIK'];
+                foreach ($gradeTypes as $gtype) {
+                    \App\Models\Grade::firstOrCreate(
+                        [
+                            'tenant_id' => $t1->id,
+                            'student_id' => $student->id,
+                            'subject_id' => $sub->id,
+                            'type' => $gtype
+                        ],
+                        [
+                            'teacher_id' => $siti->id,
+                            'score' => 60 + ($i % 35) + (($i + $sub->id) % 5),
+                            'description' => 'Baik'
+                        ]
+                    );
+                }
+
+                // Grade Details
+                $detailCategories = ['TUGAS', 'HARIAN', 'UTS', 'UAS', 'AKHIR'];
+                foreach ($detailCategories as $cat) {
+                    \App\Models\GradeDetail::firstOrCreate(
+                        [
+                            'tenant_id' => $t1->id,
+                            'student_id' => $student->id,
+                            'subject_id' => $sub->id,
+                            'category' => $cat
+                        ],
+                        [
+                            'title' => match($cat) {
+                                'TUGAS' => 'Tugas Mandiri ' . (($i % 3) + 1),
+                                'HARIAN' => 'Ulangan Harian ' . (($i % 2) + 1),
+                                'UTS' => 'UTS Semester Ganjil',
+                                'UAS' => 'UAS Semester Ganjil',
+                                'AKHIR' => 'Nilai Akhir Rapor'
+                            },
+                            'score' => 70 + ($i % 25),
+                            'weight' => match($cat) {
+                                'TUGAS' => 1.0,
+                                'HARIAN' => 2.0,
+                                'UTS', 'UAS' => 3.0,
+                                'AKHIR' => 0.0
+                            },
+                            'date' => now()->subDays(($i % 30) + 1),
+                            'note' => 'Diserahkan tepat waktu'
+                        ]
+                    );
+                }
+            }
+
+            // Seed Schedules for the class (once per class)
+            if ($i <= 4) {
+                foreach ($studentSubjects as $idx => $sub) {
+                    \App\Models\Schedule::firstOrCreate(
+                        [
+                            'tenant_id' => $t1->id,
+                            'class_id' => $classes[$className]->id,
+                            'day_of_week' => $idx + 1, // 1 to 4
+                            'start_period' => 1,
+                            'end_period' => 2
+                        ],
+                        [
+                            'subject_id' => $sub->id,
+                            'teacher_id' => $siti->id
+                        ]
+                    );
+                }
+            }
+
+            // Seed Violations for some students (multiples of 10)
+            if ($i % 10 === 0) {
+                \App\Models\StudentViolation::firstOrCreate(
+                    [
+                        'tenant_id' => $t1->id,
+                        'student_id' => $student->id,
+                        'category' => 'ringan'
+                    ],
+                    [
+                        'date' => now()->subDays(5),
+                        'description' => 'Terlambat memasuki lingkungan sekolah',
+                        'points' => 5,
+                        'action' => 'Pemberian nasehat',
+                        'recorded_by' => $siti->id
+                    ]
+                );
+            }
+
+            // Seed Achievements for some students (multiples of 15)
+            if ($i % 15 === 0) {
+                \App\Models\StudentAchievement::firstOrCreate(
+                    [
+                        'tenant_id' => $t1->id,
+                        'student_id' => $student->id,
+                        'title' => 'Juara 1 Lomba Pidato Bahasa Arab'
+                    ],
+                    [
+                        'date' => now()->subDays(10),
+                        'category' => 'keagamaan',
+                        'level' => 'kota',
+                        'ranking' => 'Juara 1',
+                        'description' => 'Lomba pidato bahasa Arab tingkat SMP/MTs se-Kota Malang',
+                        'certificate' => '/uploads/certificates/cert.pdf'
+                    ]
+                );
+            }
+
+            // Seed Tahfiz Records (all students, 2 records each)
+            $surahs = ['Al-Fatihah', 'An-Nas', 'Al-Falaq', 'Al-Ikhlas'];
+            foreach ([0, 1] as $idx) {
+                \App\Models\TahfizRecord::firstOrCreate(
+                    [
+                        'tenant_id' => $t1->id,
+                        'student_id' => $student->id,
+                        'date' => now()->subDays($idx * 3 + 1),
+                        'surah' => $surahs[$i % 4]
+                    ],
+                    [
+                        'ayah_start' => 1,
+                        'ayah_end' => 5,
+                        'type' => $idx === 0 ? 'ziyadah' : 'murajaah',
+                        'score' => 80 + ($i % 20),
+                        'fluency' => 'lancar',
+                        'note' => 'Makhraj dan tajwid baik',
+                        'recorded_by' => $siti->id
+                    ]
+                );
+            }
+
             // Create attendance for today
             $statuses = ['H','H','H','H','H','H','I','S','T','A'];
             Attendance::firstOrCreate(
@@ -200,6 +362,7 @@ class PitchingDemoSeeder extends Seeder
                 ]
             );
         }
+
 
         // === TENANT 2: MTs An-Nur ===
         $t2 = Tenant::firstOrCreate(
