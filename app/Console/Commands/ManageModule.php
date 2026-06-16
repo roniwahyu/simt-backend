@@ -112,6 +112,10 @@ class ManageModule extends Command
 
         // 3. Run module database migrations
         $this->info("Running module database migrations...");
+        $migrationPath = module_path($moduleName, 'database/migrations');
+        if (File::exists($migrationPath)) {
+            app('migrator')->path($migrationPath);
+        }
         $this->call('module:migrate', ['module' => $moduleName]);
 
         // 4. Register active subscription for all existing tenants
@@ -137,6 +141,10 @@ class ManageModule extends Command
 
         // 1. Reset/Rollback database migrations for the module
         $this->info("Rolling back module database migrations...");
+        $migrationPath = module_path($moduleName, 'database/migrations');
+        if (File::exists($migrationPath)) {
+            app('migrator')->path($migrationPath);
+        }
         try {
             $this->call('module:migrate-reset', ['module' => $moduleName]);
         } catch (\Throwable $e) {
