@@ -421,16 +421,30 @@ class FinanceModuleTest extends TestCase
             'nis' => '009',
             'nisn' => '009009',
             'name' => 'Siswa Enkripsi',
+            'birth_date' => '2015-05-15',
+            'birth_place' => 'Surabaya',
+            'gender' => 'L',
             'address' => 'Jalan Kebahagiaan No. 123',
             'status' => 'active',
         ]);
 
         // Pastikan di model didekripsi secara otomatis
         $this->assertEquals('Jalan Kebahagiaan No. 123', $student->address);
+        $this->assertEquals('009009', $student->nisn);
+        $this->assertEquals('2015-05-15', $student->birth_date->format('Y-m-d'));
+        $this->assertEquals('Surabaya', $student->birth_place);
+        $this->assertEquals('L', $student->gender);
 
         // Pastikan di database tersimpan dalam bentuk enkripsi (tidak terlihat plain text)
         $rawStudent = \Illuminate\Support\Facades\DB::table('students')->where('id', $student->id)->first();
         $this->assertNotEquals('Jalan Kebahagiaan No. 123', $rawStudent->address);
+        $this->assertNotEquals('009009', $rawStudent->nisn);
+        $this->assertNotEquals('2015-05-15', $rawStudent->birth_date);
+        $this->assertNotEquals('Surabaya', $rawStudent->birth_place);
+        $this->assertNotEquals('L', $rawStudent->gender);
+
+        // Pastikan blind index terisi dengan benar
+        $this->assertEquals(hash_hmac('sha256', '009009', config('app.key')), $rawStudent->nisn_bindex);
     }
 
     /** @test */
