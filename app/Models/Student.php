@@ -17,9 +17,23 @@ class Student extends Model
     ];
 
     protected $casts = [
-        'birth_date' => 'date',
+        'birth_date' => 'encrypted:date',
+        'nisn' => 'encrypted',
+        'birth_place' => 'encrypted',
+        'gender' => 'encrypted',
         'address' => 'encrypted',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($student) {
+            if ($student->isDirty('nisn')) {
+                $student->nisn_bindex = $student->nisn 
+                    ? hash_hmac('sha256', $student->nisn, config('app.key')) 
+                    : null;
+            }
+        });
+    }
 
 
     public function guardians(): BelongsToMany

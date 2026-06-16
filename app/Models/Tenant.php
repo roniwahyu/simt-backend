@@ -23,6 +23,16 @@ class Tenant extends Model
         return $this->hasMany(User::class, 'tenant_id');
     }
 
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class, 'tenant_id');
+    }
+
+    public function classes(): HasMany
+    {
+        return $this->hasMany(SchoolClass::class, 'tenant_id');
+    }
+
     public function modules(): HasMany
     {
         return $this->hasMany(TenantModule::class, 'tenant_id');
