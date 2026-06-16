@@ -4,5 +4,6 @@
     "Attendance": true,
     "Finance": true,
     "Notification": true,
-    "Akademik": true
+    "Akademik": true,
+    "Tahfiz": true
 }

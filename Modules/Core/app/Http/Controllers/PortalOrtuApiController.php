@@ -110,6 +110,13 @@ class PortalOrtuApiController extends Controller
         }
 
         $tenant = $student->tenant;
+        if (!$tenant->hasModule('Student')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Modul Kesiswaan (Student) tidak aktif untuk sekolah Anda.',
+                'code' => 'MODULE_INACTIVE',
+            ], 403);
+        }
         $currentClass = $student->currentClass();
 
         $token = $student->createToken('student-token', ['*'], now()->addDays(30))->plainTextToken;
@@ -175,7 +182,8 @@ class PortalOrtuApiController extends Controller
         // Fetch children
         $children = $user->guardianStudents()
             ->where('status', 'active')
-            ->get();
+            ->get()
+            ->filter(fn($s) => $s->tenant->hasModule('Student'));
 
         $studentsList = $children->map(function ($s) {
             $currentClass = $s->currentClass();
@@ -216,6 +224,15 @@ class PortalOrtuApiController extends Controller
             return $err;
         }
 
+        $tenant = $student->tenant;
+        if (!$tenant->hasModule('Student')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Modul Kesiswaan (Student) tidak aktif untuk sekolah ini.',
+                'code' => 'MODULE_INACTIVE',
+            ], 403);
+        }
+
         $gradeType = $request->query('gradeType', 'PENGETAHUAN');
 
         // Fetch Dashboard Data
@@ -237,6 +254,15 @@ class PortalOrtuApiController extends Controller
             return $err;
         }
 
+        $tenant = $student->tenant;
+        if (!$tenant->hasModule('Student')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Modul Kesiswaan (Student) tidak aktif untuk sekolah ini.',
+                'code' => 'MODULE_INACTIVE',
+            ], 403);
+        }
+
         $gradeType = $request->query('gradeType', 'PENGETAHUAN');
 
         // Fetch Extended Dashboard Data
@@ -256,6 +282,15 @@ class PortalOrtuApiController extends Controller
     {
         if ($err = $this->checkAccess($request, $student)) {
             return $err;
+        }
+
+        $tenant = $student->tenant;
+        if (!$tenant->hasModule('Akademik')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Modul Akademik tidak aktif untuk sekolah ini.',
+                'code' => 'MODULE_INACTIVE',
+            ], 403);
         }
 
         // Fetch grade details
@@ -363,184 +398,212 @@ class PortalOrtuApiController extends Controller
         ];
 
         // 2. Attendance Summary (Smart Period Fallback)
-        $attendances = Attendance::where('student_id', $student->id)
-            ->orderBy('date', 'desc')
-            ->get();
-
         $attendanceSummary = [
             'hadir' => 0, 'sakit' => 0, 'izin' => 0, 'alpha' => 0, 'total' => 0,
-            'recent' => [], 'daily' => [], 'periodLabel' => 'Belum ada data', 'hasData' => false
+            'recent' => [], 'daily' => [], 'periodLabel' => 'Modul Presensi Tidak Aktif', 'hasData' => false
         ];
 
-        if ($attendances->isNotEmpty()) {
-            $now = Carbon::now();
-            $currentMonth = $now->month;
-            $currentYear = $now->year;
+        if ($tenant->hasModule('Attendance')) {
+            $attendances = Attendance::where('student_id', $student->id)
+                ->orderBy('date', 'desc')
+                ->get();
 
-            $monthAttendances = $attendances->filter(fn($a) => Carbon::parse($a->date)->month === $currentMonth && Carbon::parse($a->date)->year === $currentYear);
+            if ($attendances->isNotEmpty()) {
+                $now = Carbon::now();
+                $currentMonth = $now->month;
+                $currentYear = $now->year;
 
-            if ($monthAttendances->isEmpty()) {
-                // Fallback to latest month with data
-                $latestDate = Carbon::parse($attendances->first()->date);
-                $fallbackMonth = $latestDate->month;
-                $fallbackYear = $latestDate->year;
-                $monthAttendances = $attendances->filter(fn($a) => Carbon::parse($a->date)->month === $fallbackMonth && Carbon::parse($a->date)->year === $fallbackYear);
+                $monthAttendances = $attendances->filter(fn($a) => Carbon::parse($a->date)->month === $currentMonth && Carbon::parse($a->date)->year === $currentYear);
+
+                if ($monthAttendances->isEmpty()) {
+                    // Fallback to latest month with data
+                    $latestDate = Carbon::parse($attendances->first()->date);
+                    $fallbackMonth = $latestDate->month;
+                    $fallbackYear = $latestDate->year;
+                    $monthAttendances = $attendances->filter(fn($a) => Carbon::parse($a->date)->month === $fallbackMonth && Carbon::parse($a->date)->year === $fallbackYear);
+                }
+
+                $hadir = $monthAttendances->filter(fn($a) => in_array($a->status, ['H', 'T']))->count();
+                $sakit = $monthAttendances->filter(fn($a) => $a->status === 'S')->count();
+                $izin = $monthAttendances->filter(fn($a) => $a->status === 'I')->count();
+                $alpha = $monthAttendances->filter(fn($a) => $a->status === 'A')->count();
+
+                $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $sampleDate = Carbon::parse($monthAttendances->first()->date);
+                $periodLabel = "Bulan " . $monthNames[$sampleDate->month] . " " . $sampleDate->year;
+
+                $recent = $monthAttendances->take(10)->map(fn($a) => [
+                    'id' => $a->id,
+                    'date' => Carbon::parse($a->date)->toDateString(),
+                    'status' => match($a->status) {
+                        'H', 'T' => 'HADIR',
+                        'S' => 'SAKIT',
+                        'I' => 'IZIN',
+                        'A' => 'ALPHA',
+                        default => 'HADIR'
+                    },
+                    'timeIn' => $a->arrival_time,
+                    'timeOut' => null,
+                    'notes' => $a->notes,
+                ])->values()->all();
+
+                $attendanceSummary = [
+                    'hadir' => $hadir,
+                    'sakit' => $sakit,
+                    'izin' => $izin,
+                    'alpha' => $alpha,
+                    'total' => $monthAttendances->count(),
+                    'recent' => $recent,
+                    'daily' => $recent,
+                    'periodLabel' => $periodLabel,
+                    'hasData' => true,
+                ];
             }
-
-            $hadir = $monthAttendances->filter(fn($a) => in_array($a->status, ['H', 'T']))->count();
-            $sakit = $monthAttendances->filter(fn($a) => $a->status === 'S')->count();
-            $izin = $monthAttendances->filter(fn($a) => $a->status === 'I')->count();
-            $alpha = $monthAttendances->filter(fn($a) => $a->status === 'A')->count();
-
-            $monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            $sampleDate = Carbon::parse($monthAttendances->first()->date);
-            $periodLabel = "Bulan " . $monthNames[$sampleDate->month] . " " . $sampleDate->year;
-
-            $recent = $monthAttendances->take(10)->map(fn($a) => [
-                'id' => $a->id,
-                'date' => Carbon::parse($a->date)->toDateString(),
-                'status' => match($a->status) {
-                    'H', 'T' => 'HADIR',
-                    'S' => 'SAKIT',
-                    'I' => 'IZIN',
-                    'A' => 'ALPHA',
-                    default => 'HADIR'
-                },
-                'timeIn' => $a->arrival_time,
-                'timeOut' => null,
-                'notes' => $a->notes,
-            ])->values()->all();
-
-            $attendanceSummary = [
-                'hadir' => $hadir,
-                'sakit' => $sakit,
-                'izin' => $izin,
-                'alpha' => $alpha,
-                'total' => $monthAttendances->count(),
-                'recent' => $recent,
-                'daily' => $recent,
-                'periodLabel' => $periodLabel,
-                'hasData' => true,
-            ];
         }
 
         // 3. Grades Calculation (PENGETAHUAN / KETERAMPILAN / UTS / UAS / SIKAP / RAPOR)
-        // Retrieve all subjects in the class
-        $subjects = $currentClass ? Subject::where('school_class_id', $currentClass->id)->get() : collect();
-        $rawGrades = Grade::where('student_id', $student->id)->get();
+        $hasAkademik = $tenant->hasModule('Akademik');
+        $gradesSummary = [
+            'list' => [],
+            'average' => 0,
+            'count' => 0,
+            'activeType' => $gradeType,
+            'availableTypes' => [],
+            'hasData' => false,
+            'belowKKMCount' => 0,
+            'pengetahuanAverage' => 0,
+            'isAllTuntas' => false,
+        ];
 
-        $gradesList = [];
-        $availableTypes = ['PENGETAHUAN', 'KETERAMPILAN', 'UTS', 'UAS', 'SIKAP'];
+        if ($hasAkademik) {
+            // Retrieve all subjects in the class
+            $subjects = $currentClass ? Subject::where('school_class_id', $currentClass->id)->get() : collect();
+            $rawGrades = Grade::where('student_id', $student->id)->get();
 
-        foreach ($subjects as $subj) {
-            $subjGrades = $rawGrades->where('subject_id', $subj->id);
+            $gradesList = [];
+            $availableTypes = ['PENGETAHUAN', 'KETERAMPILAN', 'UTS', 'UAS', 'SIKAP'];
 
-            // Rata-rata UH
-            $uhGrades = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'UH'));
-            $uhAvg = $uhGrades->isNotEmpty() ? $uhGrades->avg('score') : 0;
+            foreach ($subjects as $subj) {
+                $subjGrades = $rawGrades->where('subject_id', $subj->id);
 
-            // Rata-rata Tugas
-            $tugasGrades = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'TUGAS'));
-            $tugasAvg = $tugasGrades->isNotEmpty() ? $tugasGrades->avg('score') : 0;
+                // Rata-rata UH
+                $uhGrades = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'UH'));
+                $uhAvg = $uhGrades->isNotEmpty() ? $uhGrades->avg('score') : 0;
 
-            $utsScore = $subjGrades->firstWhere('type', 'UTS')?->score ?? 0;
-            $uasScore = $subjGrades->firstWhere('type', 'UAS')?->score ?? 0;
-            $praktikScore = $subjGrades->firstWhere('type', 'PRAKTIK')?->score ?? 0;
-            $sikapScore = $subjGrades->firstWhere('type', 'SIKAP')?->score ?? 0;
+                // Rata-rata Tugas
+                $tugasGrades = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'TUGAS'));
+                $tugasAvg = $tugasGrades->isNotEmpty() ? $tugasGrades->avg('score') : 0;
 
-            // Compute dynamic Rapor/Pengetahuan/Keterampilan
-            $pengetahuanVal = ($uhAvg * 0.25) + ($tugasAvg * 0.15) + ($utsScore * 0.30) + ($uasScore * 0.30);
-            $keterampilanVal = ($uhAvg * 0.25) + ($praktikScore * 0.40) + ($tugasAvg * 0.10) + ($uasScore * 0.25);
+                $utsScore = $subjGrades->firstWhere('type', 'UTS')?->score ?? 0;
+                $uasScore = $subjGrades->firstWhere('type', 'UAS')?->score ?? 0;
+                $praktikScore = $subjGrades->firstWhere('type', 'PRAKTIK')?->score ?? 0;
+                $sikapScore = $subjGrades->firstWhere('type', 'SIKAP')?->score ?? 0;
 
-            $selectedScore = 0;
-            if ($gradeType === 'PENGETAHUAN') $selectedScore = $pengetahuanVal;
-            elseif ($gradeType === 'KETERAMPILAN') $selectedScore = $keterampilanVal;
-            elseif ($gradeType === 'UTS') $selectedScore = $utsScore;
-            elseif ($gradeType === 'UAS') $selectedScore = $uasScore;
-            elseif ($gradeType === 'SIKAP') $selectedScore = $sikapScore;
+                // Compute dynamic Rapor/Pengetahuan/Keterampilan
+                $pengetahuanVal = ($uhAvg * 0.25) + ($tugasAvg * 0.15) + ($utsScore * 0.30) + ($uasScore * 0.30);
+                $keterampilanVal = ($uhAvg * 0.25) + ($praktikScore * 0.40) + ($tugasAvg * 0.10) + ($uasScore * 0.25);
 
-            $gradesList[] = [
-                'id' => $subj->id,
-                'subjectId' => $subj->id,
-                'subject' => [
+                $selectedScore = 0;
+                if ($gradeType === 'PENGETAHUAN') $selectedScore = $pengetahuanVal;
+                elseif ($gradeType === 'KETERAMPILAN') $selectedScore = $keterampilanVal;
+                elseif ($gradeType === 'UTS') $selectedScore = $utsScore;
+                elseif ($gradeType === 'UAS') $selectedScore = $uasScore;
+                elseif ($gradeType === 'SIKAP') $selectedScore = $sikapScore;
+
+                $gradesList[] = [
                     'id' => $subj->id,
-                    'name' => $subj->name,
-                    'code' => $subj->code,
-                    'category' => 'UMUM',
-                ],
-                'type' => $gradeType,
-                'score' => round($selectedScore, 1),
-                'kkm' => 75,
-                'notes' => $selectedScore >= 75 ? 'Tuntas' : 'Perlu Remedial',
-                'teacher' => [
-                    'name' => $waliKelas?->name ?? 'Guru Mapel',
-                ]
+                    'subjectId' => $subj->id,
+                    'subject' => [
+                        'id' => $subj->id,
+                        'name' => $subj->name,
+                        'code' => $subj->code,
+                        'category' => 'UMUM',
+                    ],
+                    'type' => $gradeType,
+                    'score' => round($selectedScore, 1),
+                    'kkm' => 75,
+                    'notes' => $selectedScore >= 75 ? 'Tuntas' : 'Perlu Remedial',
+                    'teacher' => [
+                        'name' => $waliKelas?->name ?? 'Guru Mapel',
+                    ]
+                ];
+            }
+
+            $avgGrade = count($gradesList) > 0 ? array_sum(array_column($gradesList, 'score')) / count($gradesList) : 0;
+
+            // Calculate below KKM (using Pengetahuan as base KKM check like Next.js does)
+            $pengetahuanScores = [];
+            foreach ($subjects as $subj) {
+                $subjGrades = $rawGrades->where('subject_id', $subj->id);
+                $uhAvg = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'UH'))->avg('score') ?? 0;
+                $tugasAvg = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'TUGAS'))->avg('score') ?? 0;
+                $utsScore = $subjGrades->firstWhere('type', 'UTS')?->score ?? 0;
+                $uasScore = $subjGrades->firstWhere('type', 'UAS')?->score ?? 0;
+                $pengetahuanScores[] = ($uhAvg * 0.25) + ($tugasAvg * 0.15) + ($utsScore * 0.30) + ($uasScore * 0.30);
+            }
+            $belowKKMCount = count(array_filter($pengetahuanScores, fn($s) => $s < 75));
+            $pengetahuanAvg = count($pengetahuanScores) > 0 ? array_sum($pengetahuanScores) / count($pengetahuanScores) : 0;
+
+            $gradesSummary = [
+                'list' => $gradesList,
+                'average' => round($avgGrade, 1),
+                'count' => count($gradesList),
+                'activeType' => $gradeType,
+                'availableTypes' => array_map(fn($t) => ['type' => $t, 'count' => count($gradesList)], $availableTypes),
+                'hasData' => count($gradesList) > 0,
+                'belowKKMCount' => $belowKKMCount,
+                'pengetahuanAverage' => round($pengetahuanAvg, 1),
+                'isAllTuntas' => $belowKKMCount === 0 && count($gradesList) > 0,
             ];
         }
 
-        $avgGrade = count($gradesList) > 0 ? array_sum(array_column($gradesList, 'score')) / count($gradesList) : 0;
-
-        // Calculate below KKM (using Pengetahuan as base KKM check like Next.js does)
-        $pengetahuanScores = [];
-        foreach ($subjects as $subj) {
-            $subjGrades = $rawGrades->where('subject_id', $subj->id);
-            $uhAvg = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'UH'))->avg('score') ?? 0;
-            $tugasAvg = $subjGrades->filter(fn($g) => str_starts_with($g->type, 'TUGAS'))->avg('score') ?? 0;
-            $utsScore = $subjGrades->firstWhere('type', 'UTS')?->score ?? 0;
-            $uasScore = $subjGrades->firstWhere('type', 'UAS')?->score ?? 0;
-            $pengetahuanScores[] = ($uhAvg * 0.25) + ($tugasAvg * 0.15) + ($utsScore * 0.30) + ($uasScore * 0.30);
-        }
-        $belowKKMCount = count(array_filter($pengetahuanScores, fn($s) => $s < 75));
-        $pengetahuanAvg = count($pengetahuanScores) > 0 ? array_sum($pengetahuanScores) / count($pengetahuanScores) : 0;
-
-        $gradesSummary = [
-            'list' => $gradesList,
-            'average' => round($avgGrade, 1),
-            'count' => count($gradesList),
-            'activeType' => $gradeType,
-            'availableTypes' => array_map(fn($t) => ['type' => $t, 'count' => count($gradesList)], $availableTypes),
-            'hasData' => count($gradesList) > 0,
-            'belowKKMCount' => $belowKKMCount,
-            'pengetahuanAverage' => round($pengetahuanAvg, 1),
-            'isAllTuntas' => $belowKKMCount === 0 && count($gradesList) > 0,
-        ];
-
         // 4. Payments
-        $bills = Bill::where('student_id', $student->id)
-            ->where('component', 'SPP')
-            ->orderBy('period', 'desc')
-            ->get();
-
-        $allPayments = $bills->map(fn($b) => [
-            'id' => $b->id,
-            'type' => 'SPP',
-            'amount' => (int)$b->amount,
-            'month' => (int)substr($b->period, 5, 2),
-            'year' => (int)substr($b->period, 0, 4),
-            'status' => match($b->status) {
-                'paid' => 'LUNAS',
-                'partial' => 'SEBAGIAN',
-                'unpaid' => 'BELUM_BAYAR',
-                default => 'BELUM_BAYAR'
-            },
-            'paidAmount' => (int)$b->paid_amount,
-            'paymentDate' => $b->payments()->orderBy('payment_date', 'desc')->first()?->payment_date,
-            'paymentMethod' => $b->payments()->orderBy('payment_date', 'desc')->first()?->method,
-            'notes' => null,
-            'dueDate' => $b->due_date,
-        ])->values()->all();
-
-        $unpaidBills = array_filter($allPayments, fn($p) => $p['status'] !== 'LUNAS');
-        $totalUnpaid = array_reduce($unpaidBills, fn($carry, $item) => $carry + ($item['amount'] - $item['paidAmount']), 0);
-        $totalPaid = array_reduce($allPayments, fn($carry, $item) => $carry + $item['paidAmount'], 0);
-
+        $hasFinance = $tenant->hasModule('Finance');
         $paymentsSummary = [
-            'all' => $allPayments,
-            'unpaid' => array_values($unpaidBills),
-            'totalUnpaid' => $totalUnpaid,
-            'totalPaid' => $totalPaid,
-            'hasData' => count($allPayments) > 0,
+            'all' => [],
+            'unpaid' => [],
+            'totalUnpaid' => 0,
+            'totalPaid' => 0,
+            'hasData' => false,
         ];
+
+        if ($hasFinance) {
+            $bills = Bill::where('student_id', $student->id)
+                ->where('component', 'SPP')
+                ->orderBy('period', 'desc')
+                ->get();
+
+            $allPayments = $bills->map(fn($b) => [
+                'id' => $b->id,
+                'type' => 'SPP',
+                'amount' => (int)$b->amount,
+                'month' => (int)substr($b->period, 5, 2),
+                'year' => (int)substr($b->period, 0, 4),
+                'status' => match($b->status) {
+                    'paid' => 'LUNAS',
+                    'partial' => 'SEBAGIAN',
+                    'unpaid' => 'BELUM_BAYAR',
+                    default => 'BELUM_BAYAR'
+                },
+                'paidAmount' => (int)$b->paid_amount,
+                'paymentDate' => $b->payments()->orderBy('payment_date', 'desc')->first()?->payment_date,
+                'paymentMethod' => $b->payments()->orderBy('payment_date', 'desc')->first()?->method,
+                'notes' => null,
+                'dueDate' => $b->due_date,
+            ])->values()->all();
+
+            $unpaidBills = array_filter($allPayments, fn($p) => $p['status'] !== 'LUNAS');
+            $totalUnpaid = array_reduce($unpaidBills, fn($carry, $item) => $carry + ($item['amount'] - $item['paidAmount']), 0);
+            $totalPaid = array_reduce($allPayments, fn($carry, $item) => $carry + $item['paidAmount'], 0);
+
+            $paymentsSummary = [
+                'all' => $allPayments,
+                'unpaid' => array_values($unpaidBills),
+                'totalUnpaid' => $totalUnpaid,
+                'totalPaid' => $totalPaid,
+                'hasData' => count($allPayments) > 0,
+            ];
+        }
 
         // 5. Announcements
         $announcements = Announcement::where('published_at', '<=', now())
@@ -573,7 +636,7 @@ class PortalOrtuApiController extends Controller
         // 6. Extended Data for Student Portal
         if ($extended) {
             // Schedules
-            $schedules = $currentClass ? Schedule::where('class_id', $currentClass->id)
+            $schedules = ($currentClass && $hasAkademik) ? Schedule::where('class_id', $currentClass->id)
                 ->with(['subject', 'teacher'])
                 ->get()
                 ->map(fn($s) => [
@@ -634,30 +697,42 @@ class PortalOrtuApiController extends Controller
             ];
 
             // Tahfiz progress records
-            $tahfizList = TahfizRecord::where('student_id', $student->id)
-                ->with('recorder')
-                ->orderBy('date', 'desc')
-                ->get();
-
+            $hasTahfiz = \Nwidart\Modules\Facades\Module::isEnabled('Tahfiz') && $tenant->hasModule('Tahfiz');
             $tahfiz = [
-                'totalRecords' => $tahfizList->count(),
-                'ziyadahCount' => $tahfizList->where('type', 'ziyadah')->count(),
-                'murajaahCount' => $tahfizList->where('type', 'murajaah')->count(),
-                'averageScore' => $tahfizList->isEmpty() ? 0 : round($tahfizList->avg('score'), 1),
-                'surahMemorized' => $tahfizList->pluck('surah')->unique()->count(),
-                'latestRecords' => $tahfizList->take(10)->map(fn($t) => [
-                    'id' => $t->id,
-                    'date' => $t->date?->toDateString(),
-                    'type' => strtoupper($t->type),
-                    'surah' => $t->surah,
-                    'ayahStart' => (int)$t->ayah_start,
-                    'ayahEnd' => (int)$t->ayah_end,
-                    'score' => (float)$t->score,
-                    'fluency' => strtoupper($t->fluency),
-                    'notes' => $t->note,
-                    'teacher' => ['name' => $t->recorder?->name ?? 'Guru Tahfiz'],
-                ])->values()->all(),
+                'totalRecords' => 0,
+                'ziyadahCount' => 0,
+                'murajaahCount' => 0,
+                'averageScore' => 0,
+                'surahMemorized' => 0,
+                'latestRecords' => [],
             ];
+
+            if ($hasTahfiz) {
+                $tahfizList = TahfizRecord::where('student_id', $student->id)
+                    ->with('recorder')
+                    ->orderBy('date', 'desc')
+                    ->get();
+
+                $tahfiz = [
+                    'totalRecords' => $tahfizList->count(),
+                    'ziyadahCount' => $tahfizList->where('type', 'ziyadah')->count(),
+                    'murajaahCount' => $tahfizList->where('type', 'murajaah')->count(),
+                    'averageScore' => $tahfizList->isEmpty() ? 0 : round($tahfizList->avg('score'), 1),
+                    'surahMemorized' => $tahfizList->pluck('surah')->unique()->count(),
+                    'latestRecords' => $tahfizList->take(10)->map(fn($t) => [
+                        'id' => $t->id,
+                        'date' => $t->date?->toDateString(),
+                        'type' => strtoupper($t->type),
+                        'surah' => $t->surah,
+                        'ayahStart' => (int)$t->ayah_start,
+                        'ayahEnd' => (int)$t->ayah_end,
+                        'score' => (float)$t->score,
+                        'fluency' => strtoupper($t->fluency),
+                        'notes' => $t->note,
+                        'teacher' => ['name' => $t->recorder?->name ?? 'Guru Tahfiz'],
+                    ])->values()->all(),
+                ];
+            }
 
             $payload['schedules'] = $schedules;
             $payload['violations'] = $violations;

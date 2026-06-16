@@ -67,25 +67,6 @@ return new class extends Migration
             $table->index(['tenant_id', 'student_id']);
         });
 
-        // 5. Create tahfiz_records table
-        Schema::create('tahfiz_records', function (Blueprint $table) {
-            $table->string('id', 50)->primary();
-            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
-            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
-            $table->dateTime('date');
-            $table->string('surah', 100);
-            $table->unsignedInteger('ayah_start');
-            $table->unsignedInteger('ayah_end');
-            $table->string('type', 50); // ziyadah, murajaah
-            $table->decimal('score', 5, 2)->default(0);
-            $table->string('fluency', 50)->nullable(); // lancar, cukup, kurang
-            $table->text('note')->nullable();
-            $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamps();
-
-            $table->index(['tenant_id', 'student_id']);
-        });
-
         // 6. Create grade_details table
         Schema::create('grade_details', function (Blueprint $table) {
             $table->string('id', 50)->primary();
@@ -107,7 +88,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('grade_details');
-        Schema::dropIfExists('tahfiz_records');
         Schema::dropIfExists('student_achievements');
         Schema::dropIfExists('student_violations');
         Schema::dropIfExists('schedules');
