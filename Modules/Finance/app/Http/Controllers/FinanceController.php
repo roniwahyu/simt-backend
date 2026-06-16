@@ -134,6 +134,26 @@ class FinanceController extends Controller
         $bill->paid_amount += $request->input('amount');
         $bill->updateStatus();
 
+        // [2026-06-16 | AG] Kirim notifikasi WA sukses bayar ke wali murid (F-07)
+        $student = $bill->student()->with('guardians')->first();
+        if ($student) {
+            foreach ($student->guardians as $guardian) {
+                if (!empty($guardian->phone)) {
+                    SendWaNotification::dispatch(
+                        $tenant->id,
+                        $guardian->phone,
+                        'payment_receipt',
+                        [
+                            'student_name' => $student->name,
+                            'amount' => $payment->amount,
+                            'receipt_no' => $payment->receipt_no,
+                            'date' => \Carbon\Carbon::parse($payment->payment_date)->translatedFormat('d F Y'),
+                        ]
+                    )->onQueue('wa');
+                }
+            }
+        }
+
         return redirect()->route('finance.bills')->with('success', 'Pembayaran tercatat. Kwitansi tersedia.');
     }
 
@@ -178,6 +198,172 @@ class FinanceController extends Controller
     {
         $filters = $request->only(['period', 'status', 'student_id']);
         return Excel::download(new BillsRecapExport($filters), 'rekap_tagihan.xlsx');
+    }
+
+    // [2026-06-16 | AG] Dashboard Keuangan (F-06)
+    public function dashboard(Request $request): View
+    {
+        $tenant = app(\App\Support\Tenancy::class)->tenant();
+
+        $totalTagihan = (float) Bill::sum('amount');
+        $totalDibayar = (float) Bill::sum('paid_amount');
+        $totalTunggakan = max(0, $totalTagihan - $totalDibayar - (float) Bill::sum('discount'));
+
+        $rasioLunas = $totalTagihan > 0 ? round(($totalDibayar / $totalTagihan) * 100, 1) : 0;
+
+        $currentMonth = now()->format('Y-m');
+        $tagihanBulanIni = (float) Bill::where('period', $currentMonth)->sum('amount');
+        $dibayarBulanIni = (float) Bill::where('period', $currentMonth)->sum('paid_amount');
+        
+        $recentPayments = Payment::with('student', 'bill', 'recorder')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('finance::dashboard', compact(
+            'totalTagihan', 'totalDibayar', 'totalTunggakan', 'rasioLunas',
+            'tagihanBulanIni', 'dibayarBulanIni', 'recentPayments', 'currentMonth'
+        ));
+    }
+
+    // [2026-06-16 | AG] Simpan Tagihan Individual (F-02)
+    public function storeSingleBill(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'period' => 'required|date_format:Y-m',
+            'component' => 'required|string|max:50',
+            'amount' => 'required|numeric|min:0',
+            'due_date' => 'nullable|date',
+            'auto_notify' => 'boolean',
+        ]);
+
+        $tenant = app(\App\Support\Tenancy::class)->tenant();
+        $student = Student::findOrFail($request->input('student_id'));
+
+        $bill = Bill::create([
+            'tenant_id' => $tenant->id,
+            'student_id' => $student->id,
+            'period' => $request->input('period'),
+            'component' => $request->input('component'),
+            'amount' => $request->input('amount'),
+            'due_date' => $request->input('due_date'),
+        ]);
+
+        if ($request->boolean('auto_notify')) {
+            $student->load('guardians');
+            foreach ($student->guardians as $guardian) {
+                if (!empty($guardian->phone)) {
+                    SendWaNotification::dispatch(
+                        $tenant->id,
+                        $guardian->phone,
+                        'bill_reminder',
+                        [
+                            'student_name' => $student->name,
+                            'component' => $bill->component,
+                            'period' => $bill->period,
+                            'amount' => $bill->remaining(),
+                        ]
+                    )->onQueue('wa');
+                }
+            }
+        }
+
+        return redirect()->route('finance.bills')->with('success', "Tagihan siswa {$student->name} berhasil dibuat.");
+    }
+
+    // [2026-06-16 | AG] Update Tagihan SPP (F-02)
+    public function updateBill(Request $request, Bill $bill): RedirectResponse
+    {
+        $request->validate([
+            'component' => 'required|string|max:50',
+            'amount' => 'required|numeric|min:0',
+            'due_date' => 'nullable|date',
+        ]);
+
+        $bill->update([
+            'component' => $request->input('component'),
+            'amount' => $request->input('amount'),
+            'due_date' => $request->input('due_date'),
+        ]);
+
+        $bill->updateStatus();
+
+        return redirect()->route('finance.bills')->with('success', 'Tagihan berhasil diperbarui.');
+    }
+
+    // [2026-06-16 | AG] Hapus Tagihan SPP (F-02)
+    public function destroyBill(Bill $bill): RedirectResponse
+    {
+        if ($bill->status !== 'unpaid') {
+            return back()->with('error', 'Tagihan yang sudah dibayar (sebagian/lunas) tidak dapat dihapus.');
+        }
+
+        $bill->delete();
+
+        return redirect()->route('finance.bills')->with('success', 'Tagihan berhasil dihapus.');
+    }
+
+    // [2026-06-16 | AG] Riwayat Pembayaran Global (OR-04)
+    public function paymentsHistory(Request $request): View
+    {
+        $query = Payment::with('student', 'bill', 'recorder')->orderBy('payment_date', 'desc')->orderBy('created_at', 'desc');
+
+        if ($request->filled('student_id')) {
+            $query->where('student_id', $request->input('student_id'));
+        }
+        if ($request->filled('method')) {
+            $query->where('method', $request->input('method'));
+        }
+
+        $payments = $query->paginate(50)->withQueryString();
+        $students = Student::select('id', 'name')->get();
+
+        return view('finance::payments_history', compact('payments', 'students'));
+    }
+
+    // [2026-06-16 | AG] Laporan Keuangan SPP (TU-05)
+    public function reports(Request $request): View
+    {
+        $tenant = app(\App\Support\Tenancy::class)->tenant();
+
+        $monthlyRecap = DB::table('bills')
+            ->where('tenant_id', $tenant->id)
+            ->selectRaw("
+                period,
+                SUM(amount) as total_tagihan,
+                SUM(paid_amount) as total_dibayar,
+                SUM(discount) as total_diskon,
+                COUNT(id) as total_siswa
+            ")
+            ->groupBy('period')
+            ->orderBy('period', 'desc')
+            ->get();
+
+        return view('finance::reports', compact('monthlyRecap'));
+    }
+
+    // [2026-06-16 | AG] Ekspor Laporan Keuangan PDF (F-05)
+    public function exportPdfReports(Request $request)
+    {
+        $request->validate([
+            'period' => 'required|date_format:Y-m',
+        ]);
+
+        $period = $request->input('period');
+        $tenant = app(\App\Support\Tenancy::class)->tenant();
+
+        $bills = Bill::with('student')->where('period', $period)->get();
+
+        $totalTagihan = (float) $bills->sum('amount');
+        $totalDibayar = (float) $bills->sum('paid_amount');
+        $totalTunggakan = (float) $bills->sum(fn($b) => $b->remaining());
+
+        $pdf = Pdf::loadView('finance::exports.recap_pdf', compact(
+            'bills', 'period', 'tenant', 'totalTagihan', 'totalDibayar', 'totalTunggakan'
+        ));
+
+        return $pdf->stream("Laporan-Keuangan-SPP-{$period}.pdf");
     }
 
     private function generateReceiptNo(int $tenantId): string
