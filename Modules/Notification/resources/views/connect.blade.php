@@ -160,7 +160,7 @@
                                     <span class="block text-[10px] text-red-500 truncate max-w-[150px]" title="{{ $notif->last_error }}">{{ $notif->last_error }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-gray-400 font-medium">{{ $notif->created_at->diffForHumans() }}</td>
+                            <td class="px-4 py-3 text-gray-400 font-medium">{{ $notif->created_at ? \Carbon\Carbon::parse($notif->created_at)->diffForHumans() : '-' }}</td>
                         </tr>
                         @empty
                         <tr>

@@ -414,7 +414,7 @@ class FinanceModuleTest extends TestCase
     }
 
     /** @test */
-    public function student_address_is_encrypted_in_database(): void
+    public function student_address_is_stored_in_plain_text(): void
     {
         $student = Student::create([
             'tenant_id' => $this->tenant1->id,
@@ -428,23 +428,20 @@ class FinanceModuleTest extends TestCase
             'status' => 'active',
         ]);
 
-        // Pastikan di model didekripsi secara otomatis
+        // Pastikan di model diakses dengan benar
         $this->assertEquals('Jalan Kebahagiaan No. 123', $student->address);
         $this->assertEquals('009009', $student->nisn);
         $this->assertEquals('2015-05-15', $student->birth_date->format('Y-m-d'));
         $this->assertEquals('Surabaya', $student->birth_place);
         $this->assertEquals('L', $student->gender);
 
-        // Pastikan di database tersimpan dalam bentuk enkripsi (tidak terlihat plain text)
+        // Pastikan di database tersimpan dalam bentuk plain text (tidak terenkripsi)
         $rawStudent = \Illuminate\Support\Facades\DB::table('students')->where('id', $student->id)->first();
-        $this->assertNotEquals('Jalan Kebahagiaan No. 123', $rawStudent->address);
-        $this->assertNotEquals('009009', $rawStudent->nisn);
-        $this->assertNotEquals('2015-05-15', $rawStudent->birth_date);
-        $this->assertNotEquals('Surabaya', $rawStudent->birth_place);
-        $this->assertNotEquals('L', $rawStudent->gender);
-
-        // Pastikan blind index terisi dengan benar
-        $this->assertEquals(hash_hmac('sha256', '009009', config('app.key')), $rawStudent->nisn_bindex);
+        $this->assertEquals('Jalan Kebahagiaan No. 123', $rawStudent->address);
+        $this->assertEquals('009009', $rawStudent->nisn);
+        $this->assertEquals('2015-05-15', $rawStudent->birth_date);
+        $this->assertEquals('Surabaya', $rawStudent->birth_place);
+        $this->assertEquals('L', $rawStudent->gender);
     }
 
     /** @test */

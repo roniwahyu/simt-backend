@@ -18,7 +18,7 @@
             <div class="text-xs text-slate-400 font-medium mt-0.5">+{{ $msg->to_phone }}</div>
         </div>
         <span class="text-[10px] text-slate-500 font-medium">
-            {{ $msg->created_at->diffForHumans() }}
+            {{ $msg->created_at ? \Carbon\Carbon::parse($msg->created_at)->diffForHumans() : '-' }}
         </span>
     </div>
     
