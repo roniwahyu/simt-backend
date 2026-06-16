@@ -80,5 +80,10 @@ class Student extends Authenticatable
             ->wherePivot('school_year_id', $activeYear->id)
             ->first();
     }
+
+    public function isSuperAdmin(): bool
+    {
+        return false;
+    }
 }
 
