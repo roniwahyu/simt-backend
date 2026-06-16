@@ -21,7 +21,7 @@ return new class extends Migration
 
         // 2. Create schedules table
         Schema::create('schedules', function (Blueprint $table) {
-            $table->id();
+            $table->string('id', 50)->primary();
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
             $table->foreignId('subject_id')->constrained('subjects')->cascadeOnDelete();
@@ -36,7 +36,7 @@ return new class extends Migration
 
         // 3. Create student_violations table
         Schema::create('student_violations', function (Blueprint $table) {
-            $table->id();
+            $table->string('id', 50)->primary();
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->dateTime('date');
@@ -52,7 +52,7 @@ return new class extends Migration
 
         // 4. Create student_achievements table
         Schema::create('student_achievements', function (Blueprint $table) {
-            $table->id();
+            $table->string('id', 50)->primary();
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->dateTime('date');
@@ -69,7 +69,7 @@ return new class extends Migration
 
         // 5. Create tahfiz_records table
         Schema::create('tahfiz_records', function (Blueprint $table) {
-            $table->id();
+            $table->string('id', 50)->primary();
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->dateTime('date');
@@ -88,7 +88,7 @@ return new class extends Migration
 
         // 6. Create grade_details table
         Schema::create('grade_details', function (Blueprint $table) {
-            $table->id();
+            $table->string('id', 50)->primary();
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->foreignId('subject_id')->constrained('subjects')->cascadeOnDelete();

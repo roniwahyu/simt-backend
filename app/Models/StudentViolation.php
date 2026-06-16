@@ -11,6 +11,19 @@ class StudentViolation extends Model
 {
     use HasFactory, BelongsToTenant;
 
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
+
     protected $fillable = [
         'tenant_id',
         'student_id',
