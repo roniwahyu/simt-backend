@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
 
 class Student extends Authenticatable
 {
@@ -99,6 +100,16 @@ class Student extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return false;
+    }
+
+    /**
+     * Mutator to automatically hash student password
+     */
+    public function setStudentPasswordAttribute($value): void
+    {
+        if (!empty($value)) {
+            $this->attributes['student_password'] = Hash::needsRehash($value) ? Hash::make($value) : $value;
+        }
     }
 }
 
