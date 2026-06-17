@@ -67,6 +67,25 @@ class PortalOrtuApiTest extends TestCase
             ]);
     }
 
+    public function test_parent_can_login_with_phone_number()
+    {
+        $response = $this->postJson('/api/v1/auth/parent-login', [
+            'email' => '628520000001',
+            'password' => 'password'
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'user' => ['id', 'name', 'email'],
+                    'students',
+                    'token'
+                ]
+            ]);
+    }
+
     public function test_authenticated_parent_can_access_child_dashboard()
     {
         $student = Student::where('nis', '0001')->first();

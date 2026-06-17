@@ -126,4 +126,25 @@ class SuperAdminTest extends TestCase
             'active' => false,
         ]);
     }
+
+    /** @test */
+    public function super_admin_can_access_failed_jobs_page(): void
+    {
+        $this->actingAs($this->superAdmin);
+
+        $response = $this->get(route('super.failed-jobs'));
+
+        $response->assertOk();
+        $response->assertSee('Failed Queue Jobs');
+    }
+
+    /** @test */
+    public function regular_user_cannot_access_failed_jobs_page(): void
+    {
+        $this->actingAs($this->regularUser);
+
+        $response = $this->get(route('super.failed-jobs'));
+
+        $response->assertStatus(403);
+    }
 }

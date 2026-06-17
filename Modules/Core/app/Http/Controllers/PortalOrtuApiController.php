@@ -86,19 +86,12 @@ class PortalOrtuApiController extends Controller
             ], 403);
         }
 
-        // Check password (plain text check for MVP compatibility, fallback to Hash if hashed)
+        // Check password (strict bcrypt check for security and PDP compliance)
         $passwordMatches = false;
-        if ($student->student_password === $request->input('password')) {
-            $passwordMatches = true;
-        } else {
-            // Only try Hash::check if it looks like a bcrypt hash (starts with $2)
-            if (str_starts_with($student->student_password, '$2')) {
-                try {
-                    $passwordMatches = Hash::check($request->input('password'), $student->student_password);
-                } catch (\Throwable $e) {
-                    $passwordMatches = false;
-                }
-            }
+        try {
+            $passwordMatches = Hash::check($request->input('password'), $student->student_password);
+        } catch (\Throwable $e) {
+            $passwordMatches = false;
         }
 
         if (!$passwordMatches) {
@@ -153,12 +146,17 @@ class PortalOrtuApiController extends Controller
     public function parentLogin(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|string',
+            'email' => 'required|string', // This input can accept either email or phone/WA number
             'password' => 'required|string',
         ]);
 
+        $loginInput = $request->input('email');
+
         $user = User::withoutGlobalScope('tenant')
-            ->where('email', $request->input('email'))
+            ->where(function ($query) use ($loginInput) {
+                $query->where('email', $loginInput)
+                      ->orWhere('phone', $loginInput);
+            })
             ->first();
 
         if (!$user || !Hash::check($request->input('password'), $user->password)) {
@@ -606,7 +604,8 @@ class PortalOrtuApiController extends Controller
         }
 
         // 5. Announcements
-        $announcements = Announcement::where('published_at', '<=', now())
+        $announcements = Announcement::where('tenant_id', $student->tenant_id)
+            ->where('published_at', '<=', now())
             ->where(function ($q) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })

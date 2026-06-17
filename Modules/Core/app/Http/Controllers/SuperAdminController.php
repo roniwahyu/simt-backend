@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class SuperAdminController extends Controller
@@ -133,5 +135,34 @@ class SuperAdminController extends Controller
         $users = User::select('id', 'name')->get();
 
         return view('core::super.audit_logs', compact('logs', 'tenants', 'users'));
+    }
+
+    public function failedJobs(Request $request): View
+    {
+        $failedJobs = DB::table('failed_jobs')
+            ->orderBy('id', 'desc')
+            ->paginate(20);
+
+        return view('core::super.failed_jobs', compact('failedJobs'));
+    }
+
+    public function retryFailedJob($id): RedirectResponse
+    {
+        try {
+            Artisan::call('queue:retry', ['id' => $id]);
+            return redirect()->route('super.failed-jobs')->with('success', "Job #{$id} berhasil di-retry.");
+        } catch (\Throwable $e) {
+            return redirect()->route('super.failed-jobs')->with('error', "Gagal me-retry Job: " . $e->getMessage());
+        }
+    }
+
+    public function deleteFailedJob($id): RedirectResponse
+    {
+        try {
+            Artisan::call('queue:forget', ['id' => $id]);
+            return redirect()->route('super.failed-jobs')->with('success', "Job #{$id} berhasil dihapus.");
+        } catch (\Throwable $e) {
+            return redirect()->route('super.failed-jobs')->with('error', "Gagal menghapus Job: " . $e->getMessage());
+        }
     }
 }

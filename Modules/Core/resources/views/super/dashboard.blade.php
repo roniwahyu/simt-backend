@@ -2,7 +2,17 @@
 @section('title', 'Super Admin')
 @section('content')
 <div class="space-y-6">
-    <h1 class="text-2xl font-bold">Super Admin Panel</h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="text-2xl font-bold text-gray-800">Super Admin Panel</h1>
+        <div class="flex items-center space-x-2">
+            <a href="{{ route('super.audit-logs') }}" class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded border border-gray-200 transition">
+                Audit Logs
+            </a>
+            <a href="{{ route('super.failed-jobs') }}" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded border border-red-200 transition">
+                Failed Queue Jobs
+            </a>
+        </div>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow p-4 border border-gray-100">
             <div class="text-sm text-gray-500">Total Tenant</div>
