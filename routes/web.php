@@ -19,6 +19,9 @@ Route::prefix('admin')->middleware(['auth', 'role:superadmin'])->group(function 
     Route::get('/tenants/{tenant}/edit', [SuperAdminController::class, 'editTenant'])->name('super.tenant.edit');
     Route::put('/tenants/{tenant}', [SuperAdminController::class, 'updateTenant'])->name('super.tenant.update');
     Route::get('/audit-logs', [SuperAdminController::class, 'auditLogs'])->name('super.audit-logs');
+    Route::get('/failed-jobs', [SuperAdminController::class, 'failedJobs'])->name('super.failed-jobs');
+    Route::post('/failed-jobs/{id}/retry', [SuperAdminController::class, 'retryFailedJob'])->name('super.failed-jobs.retry');
+    Route::delete('/failed-jobs/{id}', [SuperAdminController::class, 'deleteFailedJob'])->name('super.failed-jobs.delete');
 });
 
 /*
